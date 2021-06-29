@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+    executor:
+        build: .
+        volumes:
+            - .:/code
+        command: /bin/python3.9 main.py
