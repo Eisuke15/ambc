@@ -21,7 +21,6 @@ class Tcpdump:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print(exc_type, exc_value, traceback)
         print("close tcpdump")
 
     def execute(self):
