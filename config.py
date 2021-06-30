@@ -1,1 +1,2 @@
 BINARIES_DIR = './binaries'
+EXECUTION_TIME = 10
