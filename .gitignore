@@ -142,3 +142,6 @@ cython_debug/
 
 # バイナリフォルダ
 binaries
+
+# Macのファインダーファイル
+.DS_Store
