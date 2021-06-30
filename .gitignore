@@ -145,3 +145,6 @@ binaries
 
 # Macのファインダーファイル
 .DS_Store
+
+#pcapを入れておくディレクトリ
+target
