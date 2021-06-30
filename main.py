@@ -1,7 +1,8 @@
 import os
-from subprocess import run, TimeoutExpired
+from subprocess import Popen, TimeoutExpired, run
+from time import sleep
 
-from config import BINARIES_DIR, EXECUTION_TIME
+from config import BINARIES_DIR, EXECUTION_TIME, PCAP_DIR
 
 
 class Tcpdump:
@@ -13,16 +14,21 @@ class Tcpdump:
     """
 
     def __init__(self, binary_path):
-        self.pcap_filename = os.path.basename(binary_path) + ".pcap"
+        self.pcap_filepath = os.path.join(PCAP_DIR, os.path.basename(binary_path)) + ".pcap"
         self.path = binary_path
+        self.proc = None
 
     def __enter__(self):
-        print(f"start tcpdump file = {self.pcap_filename}")
-        run(["tcpdump", "-h"])
+        print("**********start tcpdump**********")
+        self.proc = Popen(["tcpdump", "-w", self.pcap_filepath], text=True)
+        sleep(2)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("close tcpdump")
+        sleep(2)  # sleepしないとtcpdumpが起動する前にファイルが実行されてパケットキャプチャが終了してしまう
+        self.proc.terminate()
+        sleep(2)
+        print("**********stop tcpdump**********\n")
 
     def execute(self):
         return execute_file(self.path)
