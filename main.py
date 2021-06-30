@@ -8,16 +8,17 @@ class Tcpdump:
     """ with文を用いて確実にtcpdumpを開始・終了するためのクラス
 
     Attributes:
-        filename (string): 実行するファイルの拡張子つきファイル名
+        filename (string): パケットデータのファイル名
         path (string): 実行するファイルのファイルパス
     """
 
     def __init__(self, binary_path):
-        self.filename = os.path.basename(binary_path)
+        self.pcap_filename = os.path.basename(binary_path) + ".pcap"
         self.path = binary_path
 
     def __enter__(self):
-        print(f"start tcpdump file = {self.filename}")
+        print(f"start tcpdump file = {self.pcap_filename}")
+        run(["tcpdump", "-h"])
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
