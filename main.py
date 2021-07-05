@@ -21,13 +21,13 @@ class Tcpdump:
     def __enter__(self):
         print("**********start tcpdump**********")
         self.proc = Popen(["tcpdump", "-w", self.pcap_filepath], text=True)
-        sleep(2)
+        sleep(2)  # sleepしないとtcpdumpが起動する前にファイルが実行されてパケットキャプチャが終了してしまう
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        sleep(2)  # sleepしないとtcpdumpが起動する前にファイルが実行されてパケットキャプチャが終了してしまう
+        sleep(2)  # 余裕を持って終了
         self.proc.terminate()
-        sleep(2)
+        sleep(2)  # 余裕を持って終了
         print("**********stop tcpdump**********\n")
 
     def execute(self):
