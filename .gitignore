@@ -141,7 +141,7 @@ cython_debug/
 .vscode
 
 # バイナリフォルダ
-binaries
+# binaries
 
 # Macのファインダーファイル
 .DS_Store
