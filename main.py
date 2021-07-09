@@ -20,13 +20,11 @@ class Tcpdump:
         self.proc = None
 
     def __enter__(self):
-        print("**********start tcpdump**********")
         self.proc = Popen(["tcpdump", "-w", self.pcap_filepath], text=True)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.proc.terminate()
-        print("**********stop tcpdump**********\n")
 
     def execute(self):
         return execute_file(self.path)
@@ -64,10 +62,12 @@ if __name__ == "__main__":
     binaries = [os.path.join(BINARIES_DIR, f) for f in os.listdir(BINARIES_DIR) if os.path.isfile(os.path.join(BINARIES_DIR, f))]
 
     for binary in binaries:
+        print("**********start tcpdump**********")
         with Tcpdump(binary) as tcpdump:
             sleep(PRE_EXECUTION_TIME)
             print(tcpdump.execute())
             sleep(POST_EXECUTION_TIME)
-        sleep(10)  # tcpdumpの出力を得るために余裕を持って終了
+        print("**********stop tcpdump**********\n")
+        sleep(5)  # tcpdumpの出力を得るために余裕を持って次の実行へ
 
     print("Done!")
