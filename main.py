@@ -2,7 +2,8 @@ import os
 from subprocess import Popen, TimeoutExpired, run
 from time import sleep
 
-from config import BINARIES_DIR, EXECUTION_TIME, PCAP_DIR
+from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
+                    POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
 
 
 class Tcpdump:
@@ -21,13 +22,10 @@ class Tcpdump:
     def __enter__(self):
         print("**********start tcpdump**********")
         self.proc = Popen(["tcpdump", "-w", self.pcap_filepath], text=True)
-        sleep(2)  # sleepしないとtcpdumpが起動する前にファイルが実行されてパケットキャプチャが終了してしまう
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        sleep(2)  # 余裕を持って終了
         self.proc.terminate()
-        sleep(2)  # 余裕を持って終了
         print("**********stop tcpdump**********\n")
 
     def execute(self):
@@ -56,7 +54,7 @@ def execute_file(filepath):
         # capture_outputをTrueにすると返り値のクラスに標準出力、標準エラー出力が格納される。
         # shell=Trueにすると文字列をそのままシェルに渡す。Falseの場合PATHに登録された実行ファイルでないといけない。
         # text=Trueにすると出力結果を文字列にエンコードする。
-        result = run(filepath, shell=True, capture_output=True, check=False, text=True, timeout=EXECUTION_TIME)
+        result = run(filepath, shell=True, capture_output=True, check=False, text=True, timeout=EXECUTION_TIME_LIMIT)
         return result
     except TimeoutExpired as e:
         return e
@@ -67,6 +65,9 @@ if __name__ == "__main__":
 
     for binary in binaries:
         with Tcpdump(binary) as tcpdump:
+            sleep(PRE_EXECUTION_TIME)
             print(tcpdump.execute())
+            sleep(POST_EXECUTION_TIME)
+        sleep(10)  # tcpdumpの出力を得るために余裕を持って終了
 
     print("Done!")
