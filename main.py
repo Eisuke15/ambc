@@ -61,13 +61,19 @@ def execute_file(filepath):
 if __name__ == "__main__":
     binaries = [os.path.join(BINARIES_DIR, f) for f in os.listdir(BINARIES_DIR) if os.path.isfile(os.path.join(BINARIES_DIR, f))]
 
-    for binary in binaries:
-        print("**********start tcpdump**********")
-        with Tcpdump(binary) as tcpdump:
-            sleep(PRE_EXECUTION_TIME)
-            print(tcpdump.execute())
-            sleep(POST_EXECUTION_TIME)
-        print("**********stop tcpdump**********\n")
-        sleep(5)  # tcpdumpの出力を得るために余裕を持って次の実行へ
+    with open("log.txt", mode="w") as f:
+        for binary in binaries:
+            print("**********start tcpdump**********")
+            with Tcpdump(binary) as tcpdump:
+                print(f"sleeping {PRE_EXECUTION_TIME} seconds")
+                sleep(PRE_EXECUTION_TIME)
+                print("executing file")
+                print(tcpdump.execute(), file=f)
+                print("", file=f)
+                print(f"sleeping {POST_EXECUTION_TIME} seconds")
+                sleep(POST_EXECUTION_TIME)
+            print("**********stop tcpdump**********")
+            sleep(5)  # tcpdumpの出力を得るために余裕を持って次の実行へ
+            print()
 
     print("Done!")

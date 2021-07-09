@@ -148,3 +148,6 @@ cython_debug/
 
 #pcapを入れておくディレクトリ
 pcap
+
+# ログファイル
+log.txt
