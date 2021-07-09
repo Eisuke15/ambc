@@ -67,7 +67,7 @@ if __name__ == "__main__":
             with Tcpdump(binary) as tcpdump:
                 print(f"sleeping {PRE_EXECUTION_TIME} seconds")
                 sleep(PRE_EXECUTION_TIME)
-                print("executing file")
+                print(f"executing {binary}")
                 print(tcpdump.execute(), file=f)
                 print("", file=f)
                 print(f"sleeping {POST_EXECUTION_TIME} seconds")
