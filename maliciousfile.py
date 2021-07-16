@@ -34,13 +34,3 @@ class MaliciousFile:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.filepath})"
 
-
-if __name__ == "__main__":
-    a = MaliciousFile("binaries/curl.sh")
-    b = MaliciousFile("binaries/sleep.sh")
-    c = MaliciousFile("./binaries/curl2.sh")
-
-    li = [a, b, c]
-    print(set(li))
-    print(a.md5sum())
-    print(a.__hash__())
