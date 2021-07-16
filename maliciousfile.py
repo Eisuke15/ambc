@@ -3,13 +3,13 @@ import os
 
 
 class MaliciousFile:
-    """不正なファイルのファイル名を格納"""
+    """不審なファイルのファイル名を格納"""
 
     def __init__(self, filepath):
         self.filepath = filepath
 
     def md5sum(self):
-        """md5チェックサムを計算し、16真数表記の文字列を返す"""
+        """md5でハッシュ値を計算し、16真数表記の文字列を返す"""
 
         with open(self.filepath, 'rb') as f:
             return hashlib.md5(f.read()).hexdigest()
@@ -17,7 +17,7 @@ class MaliciousFile:
     def __eq__(self, other):
         """ ==演算の結果を返す。
 
-        ハッシュ可能オブジェクトとして利用するには__eq__も必要らしい。
+        ハッシュ可能オブジェクトとして利用するには__eq__も必要。
         """
         return self.md5sum() == other.md5sum()
 
