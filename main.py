@@ -4,6 +4,7 @@ from time import sleep
 
 from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
                     POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
+from malicious_file import MaliciousFile
 from tcpdump import TcpdumpWithSpareTime
 
 
@@ -36,15 +37,15 @@ def execute_file(filepath):
 
 
 if __name__ == "__main__":
-    binaries = [os.path.join(BINARIES_DIR, f) for f in os.listdir(BINARIES_DIR) if os.path.isfile(os.path.join(BINARIES_DIR, f))]
+    files = [os.path.join(BINARIES_DIR, f) for f in os.listdir(BINARIES_DIR) if os.path.isfile(os.path.join(BINARIES_DIR, f))]
+    unique_file_set = set(MaliciousFile(filepath) for filepath in files)
 
-    with open("log.txt", mode="w") as f:
-        for binary in binaries:
-            with TcpdumpWithSpareTime(os.path.join(PCAP_DIR, os.path.basename(binary)) + ".pcap", PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
-                print(f"executing {binary}")
-                print(execute_file(binary), file=f)
-                print("", file=f)
-            sleep(3)  # tcpdumpの出力を得るために余裕を持って次の実行へ
-            print()
+    for f in unique_file_set:
+        pcap_name = os.path.join(PCAP_DIR, os.path.basename(f.filepath)) + ".pcap"
+        with TcpdumpWithSpareTime(pcap_name, PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
+            print(f"executing {f}")
+            print(execute_file(f.fullpath()))
+        sleep(3)  # tcpdumpの標準出力を追い越さないように余裕を持って次の実行へ
+        print()
 
     print("Done!")

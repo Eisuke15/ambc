@@ -40,7 +40,7 @@ if __name__ == "__main__":
     b = MaliciousFile("binaries/sleep.sh")
     c = MaliciousFile("./binaries/curl2.sh")
 
-    l = [a,b,c]
-    print(set(l))
+    li = [a, b, c]
+    print(set(li))
     print(a.md5sum())
     print(a.__hash__())
