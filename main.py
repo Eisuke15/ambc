@@ -7,16 +7,10 @@ from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
 
 
 class Tcpdump:
-    """ with文を用いて確実にtcpdumpを開始・終了するためのクラス
+    """ with文を用いて確実にtcpdumpを開始・終了するためのクラス"""
 
-    Attributes:
-        filename (string): パケットデータのファイル名
-        path (string): 実行するファイルのファイルパス
-    """
-
-    def __init__(self, binary_path):
-        self.pcap_filepath = os.path.join(PCAP_DIR, os.path.basename(binary_path)) + ".pcap"
-        self.path = binary_path
+    def __init__(self, pcap_filepath):
+        self.pcap_filepath = pcap_filepath
         self.proc = None
 
     def __enter__(self):
@@ -25,9 +19,6 @@ class Tcpdump:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.proc.terminate()
-
-    def execute(self):
-        return execute_file(self.path)
 
 
 def execute_file(filepath):
@@ -64,11 +55,11 @@ if __name__ == "__main__":
     with open("log.txt", mode="w") as f:
         for binary in binaries:
             print("**********start tcpdump**********")
-            with Tcpdump(binary) as tcpdump:
+            with Tcpdump(os.path.join(PCAP_DIR, os.path.basename(binary)) + ".pcap") as tcpdump:
                 print(f"sleeping {PRE_EXECUTION_TIME} seconds")
                 sleep(PRE_EXECUTION_TIME)
                 print(f"executing {binary}")
-                print(tcpdump.execute(), file=f)
+                print(execute_file(binary), file=f)
                 print("", file=f)
                 print(f"sleeping {POST_EXECUTION_TIME} seconds")
                 sleep(POST_EXECUTION_TIME)
