@@ -4,7 +4,7 @@ from time import sleep
 
 from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
                     POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
-from tcpdump import Tcpdump
+from tcpdump import TcpdumpWithSpareTime
 
 
 def execute_file(filepath):
@@ -40,17 +40,11 @@ if __name__ == "__main__":
 
     with open("log.txt", mode="w") as f:
         for binary in binaries:
-            print("**********start tcpdump**********")
-            with Tcpdump(os.path.join(PCAP_DIR, os.path.basename(binary)) + ".pcap") as tcpdump:
-                print(f"sleeping {PRE_EXECUTION_TIME} seconds")
-                sleep(PRE_EXECUTION_TIME)
+            with TcpdumpWithSpareTime(os.path.join(PCAP_DIR, os.path.basename(binary)) + ".pcap", PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
                 print(f"executing {binary}")
                 print(execute_file(binary), file=f)
                 print("", file=f)
-                print(f"sleeping {POST_EXECUTION_TIME} seconds")
-                sleep(POST_EXECUTION_TIME)
-            print("**********stop tcpdump**********")
-            sleep(5)  # tcpdumpの出力を得るために余裕を持って次の実行へ
+            sleep(3)  # tcpdumpの出力を得るために余裕を持って次の実行へ
             print()
 
     print("Done!")
