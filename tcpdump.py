@@ -3,7 +3,7 @@ from time import sleep
 
 
 class Tcpdump:
-    """ with文を用いて確実にtcpdumpを開始・終了するためのクラス"""
+    """with文を用いて確実にtcpdumpを開始・終了するためのクラス"""
 
     def __init__(self, pcap_filepath):
         self.pcap_filepath = pcap_filepath

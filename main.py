@@ -4,7 +4,7 @@ from time import sleep
 
 from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
                     POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
-from malicious_file import MaliciousFile
+from maliciousfile import MaliciousFile
 from tcpdump import TcpdumpWithSpareTime
 
 
