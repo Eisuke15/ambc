@@ -1,24 +1,10 @@
 import os
-from subprocess import Popen, TimeoutExpired, run
+from subprocess import TimeoutExpired, run
 from time import sleep
 
 from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
                     POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
-
-
-class Tcpdump:
-    """ with文を用いて確実にtcpdumpを開始・終了するためのクラス"""
-
-    def __init__(self, pcap_filepath):
-        self.pcap_filepath = pcap_filepath
-        self.proc = None
-
-    def __enter__(self):
-        self.proc = Popen(["tcpdump", "-w", self.pcap_filepath], text=True)
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.proc.terminate()
+from tcpdump import Tcpdump
 
 
 def execute_file(filepath):
