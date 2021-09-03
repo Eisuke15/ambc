@@ -80,7 +80,6 @@ class VM:
             print(e, file=sys.stderr)
             sys.exit(1)
 
-        print(iface_info)
         interface_name = list(iface_info.keys())[0]
         addr_info = iface_info[interface_name]
 
