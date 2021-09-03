@@ -1,5 +1,6 @@
 import sys
-from subprocess import run, CalledProcessError
+from subprocess import CalledProcessError, run
+from time import sleep
 
 import libvirt
 
@@ -8,12 +9,12 @@ class VM:
     """バーチャルマシンを管理するクラス"""
 
     def __init__(self, old_domain_name, new_domain_name):
-        self.domain_name = new_domain_name
         self._clone_vm(old_domain_name, new_domain_name)
         conn=None
         try:
             conn = self._connect_qemu_hypervisor()
             self.dom = conn.lookupByName(new_domain_name)
+            self._start_vm()
             self.ip_addr, self.mac_addr, self.interface_name = self._get_interfaces()
         finally:
             conn.close()
@@ -49,6 +50,14 @@ class VM:
             sys.exit(1)
 
         return
+    
+    def _start_vm(self):
+        """vmを起動する。"""
+
+        if self.dom.create() < 0:
+            print(f"{self.dom.name}を起動できません。", file=sys.stderr)
+            sys.exit(1)
+            
 
     def _get_interfaces(self):
         """インターフェースにまつわる情報を返す
@@ -59,13 +68,19 @@ class VM:
             interface_name: 仮想ブリッジのVMに繋げたネットワークインターフェース名
         """
         try:
-            iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
-            # １つ目の謎の引数についてはここに詳細あり
-            # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
+            iface_info = None
+            #vmが起動してからipアドレスが割り振られるまでの時間を待機
+            while not iface_info:
+                iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
+                # １つ目の謎の引数についてはここに詳細あり
+                # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
+                print("waiting for ip addrs to be attached to vm")
+                sleep(5)
         except libvirt.libvirtError as e:
             print(e, file=sys.stderr)
             sys.exit(1)
 
+        print(iface_info)
         interface_name = list(iface_info.keys())[0]
         addr_info = iface_info[interface_name]
 
