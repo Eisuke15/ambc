@@ -10,9 +10,13 @@ class VM:
     def __init__(self, old_domain_name, new_domain_name):
         self.domain_name = new_domain_name
         self._clone_vm(old_domain_name, new_domain_name)
-        conn = self._connect_qemu_hypervisor()
-        self.dom = conn.lookupByName(new_domain_name)
-        self.ip_addr, self.mac_addr, self.interface_name = self._get_interfaces()
+        conn=None
+        try:
+            conn = self._connect_qemu_hypervisor()
+            self.dom = conn.lookupByName(new_domain_name)
+            self.ip_addr, self.mac_addr, self.interface_name = self._get_interfaces()
+        finally:
+            conn.close()
 
     def _connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
