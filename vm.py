@@ -10,7 +10,7 @@ class VM:
 
     def __init__(self, old_domain_name, new_domain_name):
         self._clone_vm(old_domain_name, new_domain_name)
-        conn=None
+        conn = None
         try:
             conn = self._connect_qemu_hypervisor()
             self.dom = conn.lookupByName(new_domain_name)
@@ -50,14 +50,13 @@ class VM:
             sys.exit(1)
 
         return
-    
+
     def _start_vm(self):
         """vmを起動する。"""
 
         if self.dom.create() < 0:
             print(f"{self.dom.name}を起動できません。", file=sys.stderr)
             sys.exit(1)
-            
 
     def _get_interfaces(self):
         """インターフェースにまつわる情報を返す
@@ -69,7 +68,7 @@ class VM:
         """
         try:
             iface_info = None
-            #vmが起動してからipアドレスが割り振られるまでの時間を待機
+            # vmが起動してからipアドレスが割り振られるまでの時間を待機
             while not iface_info:
                 iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
                 # １つ目の謎の引数についてはここに詳細あり
