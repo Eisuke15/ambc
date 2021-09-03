@@ -4,7 +4,7 @@ import sys
 import os
 
 
-def send_and_execute_file(filepath):
+def send_and_execute_file(filepath, ip_addr):
     """ファイルを送信して実行し、結果を得るファイル。
 
     Args:
@@ -18,7 +18,7 @@ def send_and_execute_file(filepath):
     filename = os.path.basename(filepath)
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect("192.168.122.184", username=VM_USER_NAME, key_filename=KEYFILE_PATH, timeout=5)
+        client.connect(ip_addr, username=VM_USER_NAME, key_filename=KEYFILE_PATH, timeout=5)
 
         try:
             sftp_connection = client.open_sftp()
