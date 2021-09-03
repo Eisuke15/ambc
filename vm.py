@@ -11,9 +11,8 @@ class VM:
         self.domain_name = new_domain_name
         self._clone_vm(old_domain_name, new_domain_name)
         self.conn = self._connect_qemu_hypervisor()
-        self.dom = self.conn.lookupByName(old_domain_name)
-
-        self.interface_name, self.ip_addr, self.mac_addr = self._get_interfaces()
+        self.dom = self.conn.lookupByName(new_domain_name)
+        self.ip_addr, self.mac_addr, self.interface_name = self._get_interfaces()
 
     def _connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
@@ -23,8 +22,8 @@ class VM:
         """
         try:
             conn = libvirt.open("qemu:///system")
-        except libvirt.libvirtError:
-            print("ハイパーバイザに接続できませんでした。")
+        except libvirt.libvirtError as e:
+            print(f"ハイパーバイザに接続できませんでした。{e}", file=sys.stderr)
             sys.exit(1)
 
         return conn
@@ -42,7 +41,7 @@ class VM:
         try:
             run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone"], check=True, text=False)
         except CalledProcessError as e:
-            print(e)
+            print(e, file=sys.stderr)
             sys.exit(1)
 
         return
@@ -55,12 +54,23 @@ class VM:
             mac: mac address
             interface_name: 仮想ブリッジのVMに繋げたネットワークインターフェース名
         """
+        try:
+            iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
+            # １つ目の謎の引数についてはここに詳細あり
+            # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
+        except libvirt.libvirtError as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
 
-        interface_name, addr_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
-        # １つ目の謎の引数についてはここに詳細あり
-        # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
+        interface_name = list(iface_info.keys())[0]
+        addr_info = iface_info[interface_name]
 
         ip = addr_info['addrs'][0]['addr']
         mac = addr_info['hwaddr']
 
         return ip, mac, interface_name
+
+
+if __name__ == "__main__":
+    vm = VM("ubuntu20.04", "clone")
+    print(vm.ip_addr, vm.interface_name)
