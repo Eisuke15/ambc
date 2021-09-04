@@ -1,7 +1,9 @@
-import paramiko
-from config import KEYFILE_PATH, VM_USER_NAME
-import sys
 import os
+import sys
+
+import paramiko
+
+from config import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
 
 
 def send_and_execute_file(filepath, ip_addr):
@@ -27,7 +29,7 @@ def send_and_execute_file(filepath, ip_addr):
             print(e, file=sys.stderr)
             sys.exit(1)
 
-        _, stdout, stderr = client.exec_command(f"bash {filename}")
+        _, stdout, stderr = client.exec_command(f"bash {filename}", timeout=EXECUTION_TIME_LIMIT)
         stdout_text = stdout.read().decode()
         stderr_text = stderr.read().decode()
 
