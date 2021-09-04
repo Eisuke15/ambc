@@ -1,5 +1,5 @@
 import sys
-from subprocess import CalledProcessError, run
+from subprocess import run
 from time import sleep
 
 import libvirt
@@ -66,11 +66,7 @@ class VM:
             new_domain_name (str) : 作成するクローンのVMのドメインネーム
         """
 
-        try:
-            run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone"], check=True, text=False)
-        except CalledProcessError as e:
-            print(e, file=sys.stderr)
-            sys.exit(1)
+        run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone"], check=True, text=False)
 
         return
 
@@ -89,18 +85,15 @@ class VM:
             mac: mac address
             interface_name: 仮想ブリッジのVMに繋げたネットワークインターフェース名
         """
-        try:
-            iface_info = None
-            # vmが起動してからipアドレスが割り振られるまでの時間を待機
-            while not iface_info:
-                iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
-                # １つ目の謎の引数についてはここに詳細あり
-                # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
-                print("waiting for ip addrs to be attached to vm")
-                sleep(5)
-        except libvirt.libvirtError as e:
-            print(e, file=sys.stderr)
-            sys.exit(1)
+
+        iface_info = None
+        # vmが起動してからipアドレスが割り振られるまでの時間を待機
+        while not iface_info:
+            iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
+            # １つ目の謎の引数についてはここに詳細あり
+            # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
+            print("waiting for ip addrs to be attached to vm")
+            sleep(5)
 
         interface_name = list(iface_info.keys())[0]
         addr_info = iface_info[interface_name]
