@@ -46,6 +46,7 @@ if __name__ == "__main__":
         pcap_path = os.path.join(PCAP_DIR, os.path.basename(file.filepath) + ".pcap")
         with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
             stdout, stderr = send_and_execute_file(file.fullpath(), vm.ip_addr)
-            print(stdout, stderr)
+            print(f"\n*****************stdout******************\n{stdout}\n")
+            print(f"\n*****************stderr******************\n{stderr}\n")
 
     print("Done!")
