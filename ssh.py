@@ -24,12 +24,16 @@ def send_and_execute_file(filepath, ip_addr):
 
         try:
             sftp_connection = client.open_sftp()
-            sftp_connection.put(filepath, f'/home/{VM_USER_NAME}/{filename}')
+            vm_path = f'/home/{VM_USER_NAME}/{filename}'
+            sftp_connection.put(filepath, vm_path)
+            sftp_connection.chmod(vm_path, 0o755)
         except FileNotFoundError as e:
             print(e, file=sys.stderr)
             sys.exit(1)
 
-        _, stdout, stderr = client.exec_command(f"bash {filename}", timeout=EXECUTION_TIME_LIMIT)
+        _, aaa, _ = client.exec_command(f"ls -l {filename}")
+        print(aaa.read().decode())
+        _, stdout, stderr = client.exec_command(f"./{filename}", timeout=EXECUTION_TIME_LIMIT)
         stdout_text = stdout.read().decode()
         stderr_text = stderr.read().decode()
 
