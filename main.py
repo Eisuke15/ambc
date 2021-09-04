@@ -1,6 +1,5 @@
 import os
 from subprocess import TimeoutExpired, run
-from time import sleep
 
 from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
                     POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
