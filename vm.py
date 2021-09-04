@@ -9,15 +9,38 @@ class VM:
     """バーチャルマシンを管理するクラス"""
 
     def __init__(self, old_domain_name, new_domain_name):
-        self._clone_vm(old_domain_name, new_domain_name)
-        conn = None
-        try:
-            conn = self._connect_qemu_hypervisor()
-            self.dom = conn.lookupByName(new_domain_name)
-            self._start_vm()
-            self.ip_addr, self.mac_addr, self.interface_name = self._get_interfaces()
-        finally:
-            conn.close()
+        self.old_domain_name = old_domain_name
+        self.new_domain_name = new_domain_name
+        self.conn = None
+        self.ip_addr = None
+        self.interface_name = None
+
+    def __enter__(self):
+        """with文に入るときに実行する。
+
+        この内部でエラー発生しても__exit__ は実行されないので注意。（Todo）
+        """
+
+        self._clone_vm(self.old_domain_name, self.new_domain_name)
+        self.conn = self._connect_qemu_hypervisor()
+        self.dom = self.conn.lookupByName(self.new_domain_name)
+        self._start_vm()
+        self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
+
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        """いかなる原因でも（エラー含めて）with文を抜けるときに確実に実行する"""
+
+        if self.dom.destroy() < 0:
+            print(f"{self.new_domain_name}の強制終了に失敗しました。", file=sys.stderr)
+        else:
+            print(f"{self.new_domain_name}を強制終了")
+        if self.dom.undefine() < 0:
+            print(f"{self.new_domain_name}の削除に失敗しました。", file=sys.stderr)
+        else:
+            print(f"{self.new_domain_name}を削除しました。")
+        self.conn.close()
 
     def _connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
