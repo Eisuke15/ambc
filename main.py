@@ -41,12 +41,12 @@ if __name__ == "__main__":
     #     sleep(3)  # tcpdumpの標準出力を追い越さないように余裕を持って次の実行へ
     #     print()
 
-    file = list(unique_file_set)[0]
-    with VM("ubuntu20.04", "clone-ubuntu") as vm:
-        pcap_path = os.path.join(PCAP_DIR, os.path.basename(file.filepath) + ".pcap")
-        with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
-            stdout, stderr = send_and_execute_file(file.fullpath(), vm.ip_addr)
-            print(f"\n*****************stdout******************\n{stdout}\n")
-            print(f"\n*****************stderr******************\n{stderr}\n")
+    for file in unique_file_set:
+        with VM("ubuntu20.04", "clone-ubuntu") as vm:
+            pcap_path = os.path.join(PCAP_DIR, os.path.basename(file.filepath) + ".pcap")
+            with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
+                stdout, stderr = send_and_execute_file(file.fullpath(), vm.ip_addr)
+                print(f"\n*****************stdout******************\n{stdout}\n")
+                print(f"\n*****************stderr******************\n{stderr}\n")
 
     print("Done!")
