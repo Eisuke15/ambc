@@ -1,7 +1,7 @@
 import os
 import sys
 import xml.etree.ElementTree as ET
-from subprocess import run
+from subprocess import CalledProcessError, run
 from time import sleep
 
 import libvirt
@@ -73,8 +73,11 @@ class VM:
             new_domain_name (str) : 作成するクローンのVMのドメインネーム
         """
 
-        run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone"], check=True, text=False)
-
+        try:
+            run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone"], check=True, text=False)
+        except CalledProcessError as e:
+            print(f"VMのクローンに失敗しました。{e}", file=sys.stderr)
+            sys.exit(1)
         return
 
     def _start_vm(self):
@@ -128,6 +131,7 @@ class VM:
 
     def _delete_imagefile_path(self):
         """ディスクイメージファイルを削除する"""
+
         xml = self.dom.XMLDesc()
         imagefile_path = ET.fromstring(xml).find("devices/disk/source").get("file")
         try:
