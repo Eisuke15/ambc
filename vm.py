@@ -13,44 +13,41 @@ class VM:
     def __init__(self, old_domain_name, new_domain_name):
         self.old_domain_name = old_domain_name
         self.new_domain_name = new_domain_name
-        self.conn = None
-        self.ip_addr = None
-        self.interface_name = None
 
     def __enter__(self):
         """with文に入るときに実行する。
 
-        この内部でエラー発生しても__exit__ は実行されないので注意。（Todo）
+        この内部でエラー発生しても__exit__ は実行されないので注意。
         """
 
-        self._clone_vm(self.old_domain_name, self.new_domain_name)
-        self.conn = self._connect_qemu_hypervisor()
-        self.dom = self.conn.lookupByName(self.new_domain_name)
-        self._start_vm()
-        self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
+        try:
+            self._clone_vm(self.old_domain_name, self.new_domain_name)
+        except KeyboardInterrupt:
+            conn = self._connect_qemu_hypervisor()
+            self.dom = conn.lookupByName(self.new_domain_name)
+            conn.close()
+            self._delete_imagefile_path()
+            self._undefine()
+            sys.exit(1)
+
+        try:
+            conn = self._connect_qemu_hypervisor()
+            self.dom = conn.lookupByName(self.new_domain_name)
+            conn.close()
+            self._start_vm()
+            self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
+        except KeyboardInterrupt:
+            self.__exit__()
+            sys.exit(1)
 
         return self
 
     def __exit__(self, *args, **kwargs):
         """いかなる原因でも（エラー含めて）with文を抜けるときに確実に実行する"""
 
-        if self.dom.destroy() < 0:
-            print(f"{self.new_domain_name}の強制終了に失敗しました。", file=sys.stderr)
-        else:
-            print(f"{self.new_domain_name}を強制終了")
-
-        try:
-            self._delete_imagefile_path()
-        except TypeError:
-            print(f"{self.new_domain_name}のディスクイメージの削除に失敗しました。", file=sys.stderr)
-        else:
-            print(f"{self.new_domain_name}のディスクイメージを削除しました。")
-
-        if self.dom.undefine() < 0:
-            print(f"{self.new_domain_name}の削除に失敗しました。", file=sys.stderr)
-        else:
-            print(f"{self.new_domain_name}を削除しました。")
-        self.conn.close()
+        self._destroy_vm()
+        self._delete_imagefile_path()
+        self._undefine()
 
     def _connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
@@ -87,6 +84,22 @@ class VM:
             print(f"{self.dom.name}を起動できません。", file=sys.stderr)
             sys.exit(1)
 
+    def _destroy_vm(self):
+        """VMを強制終了する。"""
+
+        # そもそも起動していないなどのエラーをキャッチし終了
+        try:
+            result = self.dom.destroy()
+        except libvirt.libvirtError as e:
+            print(f"{self.new_domain_name}の強制終了に失敗しました。{e}", file=sys.stderr)
+            sys.exit(1)
+
+        # 強制終了操作はできるが失敗したときは通知のみ
+        if result < 0:
+            print(f"{self.new_domain_name}の強制終了に失敗しました。", file=sys.stderr)
+        else:
+            print(f"{self.new_domain_name}を強制終了")
+
     def _get_interfaces(self):
         """インターフェースにまつわる情報を返す
 
@@ -117,7 +130,20 @@ class VM:
         """ディスクイメージファイルを削除する"""
         xml = self.dom.XMLDesc()
         imagefile_path = ET.fromstring(xml).find("devices/disk/source").get("file")
-        os.remove(imagefile_path)
+        try:
+            os.remove(imagefile_path)
+        except TypeError:
+            print(f"{self.new_domain_name}のディスクイメージの削除に失敗しました。", file=sys.stderr)
+        else:
+            print(f"{self.new_domain_name}のディスクイメージを削除しました。")
+
+    def _undefine(self):
+        """VMを削除する"""
+
+        if self.dom.undefine() < 0:
+            print(f"{self.new_domain_name}の削除に失敗しました。", file=sys.stderr)
+        else:
+            print(f"{self.new_domain_name}を削除しました。")
 
 
 if __name__ == "__main__":
