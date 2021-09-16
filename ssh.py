@@ -33,11 +33,14 @@ def send_and_execute_file(filepath, ip_addr):
 
         _, aaa, _ = client.exec_command(f"ls -l {filename}")
         print(aaa.read().decode())
-        _, stdout, stderr = client.exec_command(f"./{filename}", timeout=EXECUTION_TIME_LIMIT)
-        stdout_text = stdout.read().decode()
-        stderr_text = stderr.read().decode()
-
-        return stdout_text, stderr_text
+        stdout_text = ""
+        stderr_text = ""
+        try:
+            _, stdout, stderr = client.exec_command(f"./{filename}", timeout=EXECUTION_TIME_LIMIT)
+            stdout_text = stdout.read().decode()
+            stderr_text = stderr.read().decode()
+        finally:
+            return stdout_text, stderr_text
 
 
 if __name__ == "__main__":
