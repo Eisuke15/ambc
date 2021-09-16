@@ -1,4 +1,6 @@
+import os
 import sys
+import xml.etree.ElementTree as ET
 from subprocess import run
 from time import sleep
 
@@ -36,6 +38,14 @@ class VM:
             print(f"{self.new_domain_name}の強制終了に失敗しました。", file=sys.stderr)
         else:
             print(f"{self.new_domain_name}を強制終了")
+
+        try:
+            self._delete_imagefile_path()
+        except TypeError:
+            print(f"{self.new_domain_name}のディスクイメージの削除に失敗しました。", file=sys.stderr)
+        else:
+            print(f"{self.new_domain_name}のディスクイメージを削除しました。")
+
         if self.dom.undefine() < 0:
             print(f"{self.new_domain_name}の削除に失敗しました。", file=sys.stderr)
         else:
@@ -102,6 +112,12 @@ class VM:
         mac = addr_info['hwaddr']
 
         return ip, mac, interface_name
+
+    def _delete_imagefile_path(self):
+        """ディスクイメージファイルを削除する"""
+        xml = self.dom.XMLDesc()
+        imagefile_path = ET.fromstring(xml).find("devices/disk/source").get("file")
+        os.remove(imagefile_path)
 
 
 if __name__ == "__main__":
