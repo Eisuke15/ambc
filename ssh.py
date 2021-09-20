@@ -56,9 +56,7 @@ def send_and_execute_file(filepath, ip_addr):
 
 
 def execution_time_limit(time):
-    for i in range(time):
-        print(i)
-        sleep(1)
+    sleep(time)
 
 
 if __name__ == "__main__":
