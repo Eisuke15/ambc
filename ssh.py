@@ -1,7 +1,10 @@
 import os
 import sys
-
+import threading
+import socket
 import paramiko
+
+from time import sleep
 
 from config import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
 
@@ -20,7 +23,7 @@ def send_and_execute_file(filepath, ip_addr):
     filename = os.path.basename(filepath)
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(ip_addr, username=VM_USER_NAME, key_filename=KEYFILE_PATH, timeout=5)
+        client.connect(ip_addr, username=VM_USER_NAME, key_filename=KEYFILE_PATH, timeout=1)
 
         try:
             sftp_connection = client.open_sftp()
@@ -31,17 +34,32 @@ def send_and_execute_file(filepath, ip_addr):
             print(e, file=sys.stderr)
             sys.exit(1)
 
-        _, aaa, _ = client.exec_command(f"ls -l {filename}")
-        print(aaa.read().decode())
-        stdout_text = ""
-        stderr_text = ""
+        print(f"command: ./{filename}")
+
+        thread = threading.Thread(target=execution_time_limit, args=(EXECUTION_TIME_LIMIT,))
+        thread.start()
+
         try:
             _, stdout, stderr = client.exec_command(f"./{filename}", timeout=EXECUTION_TIME_LIMIT)
-            stdout_text = stdout.read().decode()
-            stderr_text = stderr.read().decode()
+
+            print("****************stdout*****************")
+            for line in stdout:
+                print(line, end="")
+
+            print("****************stderr*****************")
+            for line in stderr:
+                print(line, end="")
+        except socket.timeout:
+            print("実行時間制限に達しました。")
         finally:
-            return stdout_text, stderr_text
+            thread.join()
+
+
+def execution_time_limit(time):
+    for i in range(time):
+        print(i)
+        sleep(1)
 
 
 if __name__ == "__main__":
-    print(send_and_execute_file("/home/denjo/test"))
+    send_and_execute_file("/home/denjo/testfiles2/test.sh", "192.168.122.184")

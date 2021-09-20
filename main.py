@@ -2,7 +2,7 @@ import os
 from subprocess import TimeoutExpired, run
 
 from config import (BINARIES_DIR, EXECUTION_TIME_LIMIT, PCAP_DIR,
-                    POST_EXECUTION_TIME, PRE_EXECUTION_TIME)
+                    PRE_EXECUTION_TIME)
 from ssh import send_and_execute_file
 from tcpdump import Tcpdump
 from vm import VM
@@ -39,9 +39,7 @@ if __name__ == "__main__":
     for file in files:
         with VM("ubuntu20.04", "clone-ubuntu") as vm:
             pcap_path = os.path.join(PCAP_DIR, os.path.basename(file) + ".pcap")
-            with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME, POST_EXECUTION_TIME):
-                stdout, stderr = send_and_execute_file(file, vm.ip_addr)
-                print(f"\n*****************stdout******************\n{stdout}\n")
-                print(f"\n*****************stderr******************\n{stderr}\n")
+            with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
+                send_and_execute_file(file, vm.ip_addr)
 
     print("Done!")
