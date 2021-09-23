@@ -55,7 +55,8 @@ def send_and_execute_file(filepath, ip_addr):
         except socket.timeout:
             print("\n実行時間制限\n")
         else:
-            print("\n正常に終了\n")
+            returncode = stdout.channel.recv_exit_status()
+            print(f"\n実行終了 return code = {returncode}\n")
         finally:
             thread.join()
 
