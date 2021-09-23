@@ -118,7 +118,7 @@ class VM:
             iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
             # １つ目の謎の引数についてはここに詳細あり
             # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
-            print("waiting for ip addrs to be attached to vm")
+            print("waiting for dhcp")
             sleep(5)
 
         interface_name = list(iface_info.keys())[0]
