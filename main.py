@@ -10,7 +10,8 @@ if __name__ == "__main__":
     files = []
     for item in os.listdir(BINARIES_DIR):
         path = os.path.join(BINARIES_DIR, item)
-        if os.path.isfile(path):
+        # ディレクトリではなくファイル、かつサイズが0ではないファイルを抽出
+        if os.path.isfile(path) and os.path.getsize(path):
             files.append(path)
 
     for file in files:
