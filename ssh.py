@@ -45,15 +45,17 @@ def send_and_execute_file(filepath, ip_addr):
         try:
             _, stdout, stderr = client.exec_command(f"./{filename}", timeout=EXECUTION_TIME_LIMIT)
 
-            print("****************stdout*****************")
+            print("\n****************stdout*****************")
             for line in stdout:
                 print(line, end="")
 
-            print("****************stderr*****************")
+            print("\n****************stderr*****************")
             for line in stderr:
                 print(line, end="")
         except socket.timeout:
-            print("実行時間制限に達しました。")
+            print("\n実行時間制限\n")
+        else:
+            print("\n正常に終了\n")
         finally:
             thread.join()
 
