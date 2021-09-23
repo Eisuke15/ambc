@@ -74,10 +74,13 @@ class VM:
         """
 
         try:
-            run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone"], check=True, text=False)
+            print("クローン開始")
+            run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone", "-q"], check=True, text=False)
         except CalledProcessError as e:
             print(f"VMのクローンに失敗しました。{e}", file=sys.stderr)
             sys.exit(1)
+
+        print("クローンが正常に終了しました")
         return
 
     def _start_vm(self):
@@ -113,13 +116,13 @@ class VM:
         """
 
         iface_info = None
+        print("waiting for dhcp")
         # vmが起動してからipアドレスが割り振られるまでの時間を待機
         while not iface_info:
             iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
             # １つ目の謎の引数についてはここに詳細あり
             # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddressesSource
-            print("waiting for dhcp")
-            sleep(5)
+            sleep(1)
 
         interface_name = list(iface_info.keys())[0]
         addr_info = iface_info[interface_name]
