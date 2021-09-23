@@ -36,6 +36,9 @@ def send_and_execute_file(filepath, ip_addr):
 
         print(f"command: ./{filename}")
 
+        # 別のスレッドで、実行時間制限だけsleepする関数を実行する。
+        # これにより、もしexec_command関数で実行したコマンドが時間内に終了しても、
+        # 制限時間までスレッドがjoinするのを待つことで毎回一定時間パケットキャプチャするようにしている。
         thread = threading.Thread(target=execution_time_limit, args=(EXECUTION_TIME_LIMIT,))
         thread.start()
 
