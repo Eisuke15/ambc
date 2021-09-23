@@ -1,10 +1,10 @@
 import os
+import socket
 import sys
 import threading
-import socket
-import paramiko
-
 from time import sleep
+
+import paramiko
 
 from config import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
 
