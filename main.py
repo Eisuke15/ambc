@@ -5,13 +5,15 @@ from datetime import datetime
 from subprocess import run
 
 from config import PCAP_BASE_DIR, PRE_EXECUTION_TIME
-from ssh import send_and_execute_file
+from ssh import connect_and_send_file, send_and_execute_file
 from tcpdump import Tcpdump
 from vm import VM
 
 
 def interactive_vm(path):
-    print(path)
+    vm = VM("ubuntu20.04", "clone-ubuntu")
+    vm.__enter__()
+    connect_and_send_file(vm.ip_addr, path)
     return
 
 
