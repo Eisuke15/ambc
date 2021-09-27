@@ -1,21 +1,28 @@
 import os
+import sys
 import time
 from datetime import datetime
 from subprocess import run
 
-from config import BINARIES_DIR, PCAP_BASE_DIR, PRE_EXECUTION_TIME
+from config import PCAP_BASE_DIR, PRE_EXECUTION_TIME
 from ssh import send_and_execute_file
 from tcpdump import Tcpdump
 from vm import VM
 
-if __name__ == "__main__":
+
+def interactive_vm(path):
+    print(path)
+    return
+
+
+def exec_all_specimen(path):
 
     # stpを停止
     run(["brctl", "stp", "virbr0", "off"], check=True, text=False)
 
     files = []
-    for item in os.listdir(BINARIES_DIR):
-        path = os.path.join(BINARIES_DIR, item)
+    for item in os.listdir(path):
+        path = os.path.join(path, item)
         # ディレクトリではなくファイル、かつサイズが0ではないファイルを抽出
         if os.path.isfile(path) and os.path.getsize(path):
             files.append(path)
@@ -33,4 +40,17 @@ if __name__ == "__main__":
             with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
                 send_and_execute_file(file, vm.ip_addr)
 
-    print("Done!")
+
+if __name__ == "__main__":
+
+    exec_content = sys.argv[1]
+
+    if os.path.isfile(exec_content):
+        interactive_vm(exec_content)
+
+    elif os.path.isdir(exec_content):
+        exec_all_specimen(exec_content)
+
+    else:
+        print("指定したパスが存在しません。", file=sys.stderr)
+        sys.exit(1)

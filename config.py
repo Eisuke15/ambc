@@ -1,4 +1,3 @@
-BINARIES_DIR = '/home/denjo/testfiles4/'
 PCAP_BASE_DIR = '/home/denjo/pcap/'
 PRE_EXECUTION_TIME = 3
 EXECUTION_TIME_LIMIT = 30
