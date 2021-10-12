@@ -24,6 +24,8 @@ def send_file(client, filepath):
 
 
 def connect_and_send_file(ip_addr, filepath):
+    """検体の送信だけを行う．実行はしない"""
+
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(ip_addr, username=VM_USER_NAME, key_filename=KEYFILE_PATH, timeout=1)
@@ -31,10 +33,11 @@ def connect_and_send_file(ip_addr, filepath):
 
 
 def send_and_execute_file(filepath, ip_addr):
-    """ファイルを送信して実行し、結果を得るファイル。
+    """ファイルを送信して実行し、結果を得る関数。
 
     Args:
         filepath (str): 送信、実行するファイルのフルパス
+        ip_addr (str): 送信先のIPアドレス
 
     Returns:
         stdout_text: 標準出力をutf-8でデコードしたもの
