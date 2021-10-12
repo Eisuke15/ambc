@@ -82,5 +82,19 @@ def execution_time_limit(time):
     sleep(time)
 
 
+def wait_until_receive(local_dir_path: str, remote_dir_path: str, ip_addr: str):
+    """SSHで指定されたIPアドレスとコネクションを張り，指定されたパスを監視する．ファイルを発見したら受信してそのパスを返す．
+
+    Args:
+        local_dir_path (str): 受信するローカルのディレクトリ
+        remote_dir_path (str): 監視するリモートのディレクトリ
+        ip_addr (str): 監視するホストのIPアドレス
+
+    Returns:
+        received_filepath (str): 受信したファイルのパス
+    """
+    pass
+
+
 if __name__ == "__main__":
     send_and_execute_file("/home/denjo/testfiles2/test.sh", "192.168.122.184")
