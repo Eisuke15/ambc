@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from subprocess import run
 
-from config import PCAP_BASE_DIR, PRE_EXECUTION_TIME
+from settings import PCAP_BASE_DIR, PRE_EXECUTION_TIME
 from ssh import connect_and_send_file, send_and_execute_file
 from tcpdump import Tcpdump
 from vm import VM

@@ -6,7 +6,7 @@ from time import sleep
 
 import paramiko
 
-from config import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
+from settings import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
 
 
 def send_file(client, filepath):
