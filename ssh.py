@@ -6,7 +6,9 @@ from time import sleep
 
 import paramiko
 
-from settings import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
+from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_SSH_PORT,
+                      HONEYPOT_USER_NAME, KEYFILE_PATH, TMP_SPECIMEN_DIR,
+                      VM_USER_NAME)
 
 
 def send_file(client, filepath):
@@ -83,7 +85,7 @@ def execution_time_limit(time):
 
 
 def wait_until_receive(local_dir_path: str, remote_dir_path: str, ip_addr: str):
-    """SSHで指定されたIPアドレスとコネクションを張り，指定されたパスを監視する．ファイルを発見したら受信してそのパスを返す．
+    """SSHで指定されたIPアドレスとコネクションを張り，指定されたパスを監視する．ファイルを発見したら受信して削除し，そのパスを返す．
 
     Args:
         local_dir_path (str): 受信するローカルのディレクトリ
@@ -92,9 +94,31 @@ def wait_until_receive(local_dir_path: str, remote_dir_path: str, ip_addr: str):
 
     Returns:
         received_filepath (str): 受信したファイルのパス
+
+    Notes:
+        remote_dir_pathに読み書き実行権限が必要
     """
-    pass
+
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(ip_addr, port=HONEYPOT_SSH_PORT, username=HONEYPOT_USER_NAME, key_filename=KEYFILE_PATH, timeout=1)
+        print("接続完了")
+        with client.open_sftp() as sftpconn:
+            specimen_list = sftpconn.listdir(remote_dir_path)
+            while not specimen_list:
+                print("No specimen found")
+                sleep(10)
+                specimen_list = sftpconn.listdir(remote_dir_path)
+            else:
+                specimen = specimen_list[0]
+                print(f"Transferring {specimen}")
+                remote_specimen_path = os.path.join(remote_dir_path, specimen)
+                local_specimen_path = os.path.join(local_dir_path, specimen)
+                sftpconn.get(remote_specimen_path, local_specimen_path)
+                sftpconn.remove(remote_specimen_path)
+                return local_specimen_path
 
 
 if __name__ == "__main__":
-    send_and_execute_file("/home/denjo/testfiles2/test.sh", "192.168.122.184")
+    from settings import HONEYPOT_IP_ADDR, HONEYPOT_SPECIMEN_DIR
+    wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR, HONEYPOT_IP_ADDR)
