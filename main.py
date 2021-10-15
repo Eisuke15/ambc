@@ -4,16 +4,18 @@ import time
 from datetime import datetime
 from subprocess import run
 
-from settings import PCAP_BASE_DIR, PRE_EXECUTION_TIME
-from ssh import connect_and_send_file, send_and_execute_file
+from settings import PCAP_BASE_DIR, PRE_EXECUTION_TIME, VM_USER_NAME, KEYFILE_PATH
+from ssh import SSH, send_and_execute_file
 from tcpdump import Tcpdump
 from vm import VM
 
 
-def interactive_vm(path):
+def interactive_vm(local_specimen_path):
     vm = VM("ubuntu20.04", "clone-ubuntu")
     vm.__enter__()
-    connect_and_send_file(vm.ip_addr, path)
+    with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
+        remote_specimen_path = f"/home/{VM_USER_NAME}/{os.path.basename(local_specimen_path)}"
+        ssh.send_file(local_specimen_path, remote_specimen_path)
     return
 
 

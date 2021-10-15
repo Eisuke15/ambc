@@ -9,20 +9,6 @@ import paramiko
 from settings import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
 
 
-def send_file(client, filepath):
-    """SFTPでファイルの送信"""
-
-    filename = os.path.basename(filepath)
-    try:
-        sftp_connection = client.open_sftp()
-        vm_path = f'/home/{VM_USER_NAME}/{filename}'
-        sftp_connection.put(filepath, vm_path)
-        sftp_connection.chmod(vm_path, 0o755)
-    except FileNotFoundError as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
-
-
 def connect_and_send_file(ip_addr, filepath):
     """検体の送信だけを行う．実行はしない"""
 
@@ -111,6 +97,13 @@ class SSH:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.client.close()
+
+    def send_file(self, local_specimen_path, remote_specimen_path):
+        """SFTPでファイルの送信"""
+
+        with self.client.open_sftp() as sftp_conn:
+            sftp_conn.put(local_specimen_path, remote_specimen_path)
+            sftp_conn.chmod(remote_specimen_path, 0o755)
 
     def wait_until_receive(self, local_dir_path: str, remote_dir_path: str):
         """指定されたパスを監視する．ファイルを発見したら受信して削除し，そのパスを返す．
