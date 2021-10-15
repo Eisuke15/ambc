@@ -37,7 +37,12 @@ class SSH:
         self.client.close()
 
     def send_file(self, local_specimen_path, remote_specimen_path):
-        """SFTPでファイルの送信"""
+        """SFTPでファイルの送信
+
+        Args:
+            local_specimen_path (str): 送信する検体のパス
+            remote_specimen_path (str): 送信先のパス
+        """
 
         with self.client.open_sftp() as sftp_conn:
             sftp_conn.put(local_specimen_path, remote_specimen_path)
@@ -47,8 +52,7 @@ class SSH:
         """検体を実行し、VM上での検体の出力を出力しながら、一定時間待機する。
 
         Args:
-            local_specimen_path (str): 送信、実行するファイルのパス
-            remote_specimen_path (str): VM内のファイルの置き場
+            remote_specimen_path (str): 実行するファイルのパス
         """
 
         # 別のスレッドで、実行時間制限だけsleepする関数を実行する。
@@ -86,7 +90,6 @@ class SSH:
         Args:
             local_dir_path (str): 受信するローカルのディレクトリ
             remote_dir_path (str): 監視するリモートのディレクトリ
-            ip_addr (str): 監視するホストのIPアドレス
 
         Returns:
             received_filepath (str): 受信したファイルのパス
