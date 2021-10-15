@@ -6,9 +6,7 @@ from time import sleep
 
 import paramiko
 
-from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_SSH_PORT,
-                      HONEYPOT_USER_NAME, KEYFILE_PATH, TMP_SPECIMEN_DIR,
-                      VM_USER_NAME)
+from settings import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
 
 
 def send_file(client, filepath):
@@ -84,26 +82,52 @@ def execution_time_limit(time):
     sleep(time)
 
 
-def wait_until_receive(local_dir_path: str, remote_dir_path: str, ip_addr: str):
-    """SSHで指定されたIPアドレスとコネクションを張り，指定されたパスを監視する．ファイルを発見したら受信して削除し，そのパスを返す．
+class SSH:
+    """with文でsshコネクションを管理する
 
-    Args:
-        local_dir_path (str): 受信するローカルのディレクトリ
-        remote_dir_path (str): 監視するリモートのディレクトリ
-        ip_addr (str): 監視するホストのIPアドレス
-
-    Returns:
-        received_filepath (str): 受信したファイルのパス
-
-    Notes:
-        remote_dir_pathに読み書き実行権限が必要
+    Attributes:
+        ip_addr (str): 接続するサーバのIPアドレス
+        username (str): 接続先のユーザ名
+        key_file_path (str): 秘密鍵のパス
+        port (str): 接続先するSSHサーバのポート（デフォルトは22）
     """
 
-    with paramiko.SSHClient() as client:
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(ip_addr, port=HONEYPOT_SSH_PORT, username=HONEYPOT_USER_NAME, key_filename=KEYFILE_PATH, timeout=1)
-        print("接続完了")
-        with client.open_sftp() as sftpconn:
+    def __init__(self, ip_addr, username, key_file_path, port=22):
+        self.ip_addr = ip_addr
+        self.username = username
+        self.key_file_path = key_file_path
+        self.port = port
+
+    def __enter__(self):
+        self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.client.connect(
+            hostname=self.ip_addr,
+            username=self.username,
+            key_filename=self.key_file_path,
+            port=self.port
+        )
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.client.close()
+
+    def wait_until_receive(self, local_dir_path: str, remote_dir_path: str):
+        """指定されたパスを監視する．ファイルを発見したら受信して削除し，そのパスを返す．
+
+        Args:
+            local_dir_path (str): 受信するローカルのディレクトリ
+            remote_dir_path (str): 監視するリモートのディレクトリ
+            ip_addr (str): 監視するホストのIPアドレス
+
+        Returns:
+            received_filepath (str): 受信したファイルのパス
+
+        Notes:
+            remote_dir_pathに読み書き実行権限が必要
+        """
+
+        with self.client.open_sftp() as sftpconn:
             specimen_list = sftpconn.listdir(remote_dir_path)
             while not specimen_list:
                 print("No specimen found")
@@ -120,5 +144,9 @@ def wait_until_receive(local_dir_path: str, remote_dir_path: str, ip_addr: str):
 
 
 if __name__ == "__main__":
-    from settings import HONEYPOT_IP_ADDR, HONEYPOT_SPECIMEN_DIR
-    wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR, HONEYPOT_IP_ADDR)
+    from settings import (HONEYPOT_IP_ADDR, HONEYPOT_SPECIMEN_DIR,
+                          HONEYPOT_SSH_PORT, HONEYPOT_USER_NAME,
+                          TMP_SPECIMEN_DIR)
+
+    with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
+        print(ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR))
