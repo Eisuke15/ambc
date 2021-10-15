@@ -1,21 +1,11 @@
 import os
 import socket
-import sys
 import threading
 from time import sleep
 
 import paramiko
 
 from settings import EXECUTION_TIME_LIMIT, KEYFILE_PATH, VM_USER_NAME
-
-
-def connect_and_send_file(ip_addr, filepath):
-    """検体の送信だけを行う．実行はしない"""
-
-    with paramiko.SSHClient() as client:
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(ip_addr, username=VM_USER_NAME, key_filename=KEYFILE_PATH, timeout=1)
-        send_file(client, filepath)
 
 
 def send_and_execute_file(filepath, ip_addr):
