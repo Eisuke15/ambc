@@ -1,16 +1,36 @@
 import os
 import sys
-import time
 from datetime import datetime
 from subprocess import run
 
-from settings import PCAP_BASE_DIR, PRE_EXECUTION_TIME, VM_USER_NAME, KEYFILE_PATH
-from ssh import SSH, send_and_execute_file
+from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
+                      HONEYPOT_SPECIMEN_DIR, HONEYPOT_SSH_PORT,
+                      HONEYPOT_USER_NAME, KEYFILE_PATH, PCAP_BASE_DIR,
+                      PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR, VM_USER_NAME)
+from ssh import SSH
 from tcpdump import Tcpdump
 from vm import VM
 
 
+def stop_stp(bridge_name="virbr0"):
+    """ブリッジのSTPを停止する"""
+
+    run(["brctl", "stp", bridge_name, "off"], check=True)
+
+
+def mk_pcap_dir():
+    """pcapを格納するディレクトリを作成
+
+    実行日時を名前とする
+    """
+    pcap_dir_name = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    pcap_dir = os.path.join(PCAP_BASE_DIR, pcap_dir_name)
+    os.mkdir(pcap_dir)
+    return pcap_dir_name
+
+
 def interactive_vm(local_specimen_path):
+    stop_stp()
     vm = VM("ubuntu20.04", "clone-ubuntu")
     vm.__enter__()
     with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
@@ -19,42 +39,34 @@ def interactive_vm(local_specimen_path):
     return
 
 
-def exec_all_specimen(path):
+def behavior_collection():
+    """挙動収集の一連の動作"""
 
-    # stpを停止
-    run(["brctl", "stp", "virbr0", "off"], check=True, text=False)
+    stop_stp()
 
-    files = []
-    for item in os.listdir(path):
-        path = os.path.join(path, item)
-        # ディレクトリではなくファイル、かつサイズが0ではないファイルを抽出
-        if os.path.isfile(path) and os.path.getsize(path):
-            files.append(path)
+    # まず検体をハニーポットから転送
+    with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
+        local_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR)
 
-    pcap_dir_name = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    pcap_dir = os.path.join(PCAP_BASE_DIR, pcap_dir_name)
-    os.mkdir(pcap_dir)
+    pcap_dir = mk_pcap_dir()
 
-    start_time = time.time()
-    for i, file in enumerate(files):
-        elapsed_time = int(time.time() - start_time)
-        print(f"\n{elapsed_time}[sec]  {i}/{len(files)}  {os.path.basename(file)}\n")
-        with VM("ubuntu20.04", "clone-ubuntu") as vm:
-            pcap_path = os.path.join(pcap_dir, os.path.basename(file) + ".pcap")
-            with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
-                send_and_execute_file(file, vm.ip_addr)
+    # Tcpdumpを開始しVM内で実行
+    with VM("ubuntu20.04", "clone-ubuntu") as vm:
+        pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
+        with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
+            with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
+                vm_home_dir = f"/home/{VM_USER_NAME}"
+                ssh.send_file(local_specimen_path, vm_home_dir)
+                ssh.execute_file(vm_home_dir, EXECUTION_TIME_LIMIT)
 
 
 if __name__ == "__main__":
 
-    exec_content = sys.argv[1]
-
-    if os.path.isfile(exec_content):
-        interactive_vm(exec_content)
-
-    elif os.path.isdir(exec_content):
-        exec_all_specimen(exec_content)
+    if len(sys.argv) == 2:
+        interactive_vm(sys.argv[1])
 
     else:
-        print("指定したパスが存在しません。", file=sys.stderr)
-        sys.exit(1)
+        while True:
+            print(datetime.now())
+            behavior_collection()
+            print("\n\n\n")
