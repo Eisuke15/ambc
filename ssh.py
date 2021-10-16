@@ -121,12 +121,4 @@ class SSH:
 
 
 if __name__ == "__main__":
-    from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
-                      HONEYPOT_SPECIMEN_DIR, HONEYPOT_SSH_PORT,
-                      HONEYPOT_USER_NAME, KEYFILE_PATH, PCAP_BASE_DIR,
-                      PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR, VM_USER_NAME)
-
-    with SSH("192.168.122.69", VM_USER_NAME, KEYFILE_PATH) as ssh:
-        remote_specimen_path = f"/home/{VM_USER_NAME}/test.sh"
-        ssh.send_file("/home/denjo/test.sh", remote_specimen_path)
-        ssh.execute_file(remote_specimen_path, 20)
+    pass
