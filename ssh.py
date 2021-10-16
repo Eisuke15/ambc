@@ -92,7 +92,8 @@ class SSH:
             remote_dir_path (str): 監視するリモートのディレクトリ
 
         Returns:
-            received_filepath (str): 受信したファイルのパス
+            local_specimen_path (str): 受信したファイルのパス
+            remote_specimen_path (str): 送信したファイルのパス
 
         Notes:
             remote_dir_pathに読み書き実行権限が必要
@@ -110,8 +111,13 @@ class SSH:
                 remote_specimen_path = os.path.join(remote_dir_path, specimen)
                 local_specimen_path = os.path.join(local_dir_path, specimen)
                 sftpconn.get(remote_specimen_path, local_specimen_path)
-                sftpconn.remove(remote_specimen_path)
-                return local_specimen_path
+                return local_specimen_path, remote_specimen_path
+
+    def remove_specimen(self, remote_specimen_path):
+        """リモートのファイルを削除する"""
+
+        with self.client.open_sftp() as sftp_conn:
+            sftp_conn.remove(remote_specimen_path)
 
 
 if __name__ == "__main__":
