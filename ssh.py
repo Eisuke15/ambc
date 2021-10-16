@@ -101,8 +101,9 @@ class SSH:
 
         with self.client.open_sftp() as sftpconn:
             specimen_list = sftpconn.listdir(remote_dir_path)
+            if not specimen_list:
+                print("検体を待機中")
             while not specimen_list:
-                print("No specimen found")
                 sleep(10)
                 specimen_list = sftpconn.listdir(remote_dir_path)
             else:
