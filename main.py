@@ -53,15 +53,18 @@ def behavior_collection():
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR)
 
-        # Tcpdumpを開始しVM内で実行
-        with VM("ubuntu20.04", "clone-ubuntu") as vm:
-            pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
-            with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
-                with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
-                    vm_home_dir = f"/home/{VM_USER_NAME}"
-                    remote_specimen_path = os.path.join(vm_home_dir, os.path.basename(local_specimen_path))
-                    ssh.send_file(local_specimen_path, remote_specimen_path)
-                    ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
+        if os.path.getsize(local_specimen_path):  # ファイルが空の場合はVMを建てない
+            # Tcpdumpを開始しVM内で実行
+            with VM("ubuntu20.04", "clone-ubuntu") as vm:
+                pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
+                with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
+                    with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
+                        vm_home_dir = f"/home/{VM_USER_NAME}"
+                        remote_specimen_path = os.path.join(vm_home_dir, os.path.basename(local_specimen_path))
+                        ssh.send_file(local_specimen_path, remote_specimen_path)
+                        ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
+        else:
+            print(f"{os.path.basename(local_specimen_path)}のサイズは0です。")
 
         # 最後に検体をハニーポットから削除
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
