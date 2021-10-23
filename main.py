@@ -49,7 +49,7 @@ def behavior_collection():
     while True:
         print(datetime.now())
 
-        # まず検体をハニーポットから転送
+        # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR)
 
