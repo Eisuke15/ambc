@@ -5,6 +5,8 @@ from time import sleep
 
 import paramiko
 
+from util import die
+
 
 class SSH:
     """with文でsshコネクションを管理する
@@ -100,7 +102,10 @@ class SSH:
         """
 
         with self.client.open_sftp() as sftpconn:
-            specimen_list = sftpconn.listdir(remote_dir_path)
+            try:
+                specimen_list = sftpconn.listdir(remote_dir_path)
+            except IOError as e:
+                die("指定した監視するディレクトリが存在しません。", e)
             if not specimen_list:
                 print("検体を待機中")
             while not specimen_list:
