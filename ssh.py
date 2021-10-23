@@ -66,17 +66,14 @@ class SSH:
         thread.start()
 
         try:
-            command = f"{remote_specimen_path}"
+            command = f"{remote_specimen_path} 2>&1"
             print(f"Command: {command}")
             _, stdout, stderr = self.client.exec_command(command, timeout=ovservation_time)
 
-            print("\n****************stdout*****************")
+            print("\n****************出力*****************")
             for line in stdout:
                 print(line, end="")
 
-            print("\n****************stderr*****************")
-            for line in stderr:
-                print(line, end="")
         except socket.timeout:
             print("\n実行時間制限\n")
         else:
