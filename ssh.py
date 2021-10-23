@@ -83,12 +83,12 @@ class SSH:
             thread.join()
             print("パケット観測終了")
 
-    def wait_until_receive(self, local_dir_path: str, remote_dir_path: str):
+    def wait_until_receive(self, local_dir_path: str, remote_dir_paths):
         """指定されたパスを監視する．ファイルを発見したら受信して，そのパスを返す．
 
         Args:
             local_dir_path (str): 受信するローカルのディレクトリ
-            remote_dir_path (str): 監視するリモートのディレクトリ
+            remote_dir_paths (list(str)): 監視するリモートのディレクトリのリスト
 
         Returns:
             local_specimen_path (str): 受信したファイルのパス
@@ -98,21 +98,29 @@ class SSH:
             remote_dir_pathに読み書き実行権限が必要
         """
 
+        def find_specimen(remote_dir_paths):
+            """指定されたパスを監視し、ファイルを発見したらパスを返す。何も存在しなければNoneを返す。"""
+
+            for path in remote_dir_paths:
+                specimen_list = sftpconn.listdir(path)
+                if specimen_list:
+                    return os.path.join(path, specimen_list[0])
+            return None
+
         with self.client.open_sftp() as sftpconn:
             try:
-                specimen_list = sftpconn.listdir(remote_dir_path)
+                remote_specimen_path = find_specimen(remote_dir_paths)
             except IOError as e:
                 die("指定した監視するディレクトリが存在しません。", e)
-            if not specimen_list:
+            if not remote_specimen_path:
                 print("検体を待機中")
-            while not specimen_list:
+            while not remote_specimen_path:
                 sleep(10)
-                specimen_list = sftpconn.listdir(remote_dir_path)
+                remote_specimen_path = find_specimen(remote_dir_paths)
             else:
-                specimen = specimen_list[0]
-                print(f"Transferring {specimen}")
-                remote_specimen_path = os.path.join(remote_dir_path, specimen)
-                local_specimen_path = os.path.join(local_dir_path, specimen)
+                specimen_filename = os.path.basename(remote_specimen_path)
+                print(f"Transferring {specimen_filename}")
+                local_specimen_path = os.path.join(local_dir_path, specimen_filename)
                 sftpconn.get(remote_specimen_path, local_specimen_path)
                 return local_specimen_path, remote_specimen_path
 

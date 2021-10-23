@@ -4,7 +4,7 @@ from datetime import datetime
 from subprocess import run
 
 from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
-                      HONEYPOT_SPECIMEN_DIR, HONEYPOT_SSH_PORT,
+                      HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
                       HONEYPOT_USER_NAME, KEYFILE_PATH, PCAP_BASE_DIR,
                       PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR, VM_USER_NAME)
 from ssh import SSH
@@ -51,7 +51,7 @@ def behavior_collection():
 
         # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
-            local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIR)
+            local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
 
         if os.path.getsize(local_specimen_path):  # ファイルが空の場合はVMを建てない
             # Tcpdumpを開始しVM内で実行
