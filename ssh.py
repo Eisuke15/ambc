@@ -85,7 +85,7 @@ class SSH:
             print("パケット観測終了")
 
     def wait_until_receive(self, local_dir_path: str, remote_dir_path: str):
-        """指定されたパスを監視する．ファイルを発見したら受信して削除し，そのパスを返す．
+        """指定されたパスを監視する．ファイルを発見したら受信して，そのパスを返す．
 
         Args:
             local_dir_path (str): 受信するローカルのディレクトリ
