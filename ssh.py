@@ -120,7 +120,11 @@ class SSH:
         """リモートのファイルを削除する"""
 
         with self.client.open_sftp() as sftp_conn:
-            sftp_conn.remove(remote_specimen_path)
+            try:
+                sftp_conn.remove(remote_specimen_path)
+                print(f"ハニーポットの{remote_specimen_path}を削除しました。")
+            except IOError as e:
+                print(f"ハニーポットに{remote_specimen_path}が存在しないため、削除できません。: {e}")
 
 
 if __name__ == "__main__":
