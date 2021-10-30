@@ -68,11 +68,14 @@ class SSH:
         try:
             command = f"{remote_specimen_path} 2>&1"
             print(f"Command: {command}")
-            _, stdout, stderr = self.client.exec_command(command, timeout=ovservation_time)
+            _, stdout, _ = self.client.exec_command(command, timeout=ovservation_time)
 
             print("\n****************出力*****************")
-            for line in stdout:
-                print(line, end="")
+            try:
+                for line in stdout:
+                    print(line, end="")
+            except UnicodeDecodeError as e:
+                print(f"出力がデコードできませんでした。: {e}")
 
         except socket.timeout:
             print("\n実行時間制限\n")
@@ -119,7 +122,7 @@ class SSH:
                 remote_specimen_path = find_specimen(remote_dir_paths)
             else:
                 specimen_filename = os.path.basename(remote_specimen_path)
-                print(f"Transferring {specimen_filename}")
+                print(f"{remote_specimen_path} を転送中")
                 local_specimen_path = os.path.join(local_dir_path, specimen_filename)
                 sftpconn.get(remote_specimen_path, local_specimen_path)
                 return local_specimen_path, remote_specimen_path

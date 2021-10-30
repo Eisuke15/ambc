@@ -1,12 +1,12 @@
 import os
 import sys
 from datetime import datetime
-from subprocess import run
+from subprocess import PIPE, run
 
-from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
-                      HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
-                      HONEYPOT_USER_NAME, KEYFILE_PATH, PCAP_BASE_DIR,
-                      PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR, VM_USER_NAME)
+from settings import (CLONE_VM_DOMAIN_NAME, EXECUTION_TIME_LIMIT,
+                      HONEYPOT_IP_ADDR, HONEYPOT_SPECIMEN_DIRS,
+                      HONEYPOT_SSH_PORT, HONEYPOT_USER_NAME, KEYFILE_PATH,
+                      PCAP_BASE_DIR, PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR)
 from ssh import SSH
 from tcpdump import Tcpdump
 from vm import VM
@@ -29,14 +29,34 @@ def mk_pcap_dir():
     return pcap_dir
 
 
-def interactive_vm(local_specimen_path):
-    stop_stp()
-    vm = VM("ubuntu20.04", "clone-ubuntu")
-    vm.__enter__()
-    with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
-        remote_specimen_path = f"/home/{VM_USER_NAME}/{os.path.basename(local_specimen_path)}"
-        ssh.send_file(local_specimen_path, remote_specimen_path)
-    return
+def judge_os(local_specimen_path):
+    """ファイル形式から、実行環境のOSを判定
+
+    Returns:
+        Windowsか否か
+        クローン元の仮想マシンのドメインネーム,
+        仮想マシンのユーザ名
+
+        実行する必要がないと判断するときはNoneを返す
+    """
+
+    result = run(["file", local_specimen_path], check=True, text=True, stdout=PIPE)
+    print(f"ファイル形式:  {result.stdout}")
+    tokens = result.stdout.split()
+    if 'PE32' in tokens:
+        return True, 'win10_32bit', 'malwa'
+    elif 'ELF' in tokens or 'ASCII' in tokens or 'Bourne-Aain' in tokens:
+        return False, 'ubuntu20.04', 'vmuser'
+    else:
+        return None, None, None
+
+
+def decide_remote_specimen_path(is_windows, local_specimen_path, vm_username):
+    filename = os.path.basename(local_specimen_path)
+    if is_windows:
+        return r"C:\Users" + '\\' + vm_username + '\\' + filename + '.exe'
+    else:
+        return os.path.join('/home', vm_username, filename)
 
 
 def behavior_collection():
@@ -53,24 +73,32 @@ def behavior_collection():
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
 
-        if os.path.getsize(local_specimen_path):  # ファイルが空の場合はVMを建てない
+        is_windows, domain_name, vm_username = judge_os(local_specimen_path)
+        if domain_name is not None:
             # Tcpdumpを開始しVM内で実行
-            with VM("ubuntu20.04", "clone-ubuntu") as vm:
+            with VM(domain_name, CLONE_VM_DOMAIN_NAME) as vm:
                 pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
                 with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
-                    with SSH(vm.ip_addr, VM_USER_NAME, KEYFILE_PATH) as ssh:
-                        vm_home_dir = f"/home/{VM_USER_NAME}"
-                        remote_specimen_path = os.path.join(vm_home_dir, os.path.basename(local_specimen_path))
+                    with SSH(vm.ip_addr, vm_username, KEYFILE_PATH) as ssh:
+                        remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
                         ssh.send_file(local_specimen_path, remote_specimen_path)
                         ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
-        else:
-            print(f"{os.path.basename(local_specimen_path)}のサイズは0です。")
 
         # 最後に検体をハニーポットから削除
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             ssh.remove_specimen(honeypot_specimen_path)
 
         print("\n\n\n")
+
+
+def interactive_vm(local_specimen_path):
+    stop_stp()
+    vm = VM("win10_32bit", CLONE_VM_DOMAIN_NAME)
+    vm.__enter__()
+    with SSH(vm.ip_addr, 'malwa', KEYFILE_PATH) as ssh:
+        remote_specimen_path = decide_remote_specimen_path(True, local_specimen_path, 'malwa')
+        ssh.send_file(local_specimen_path, remote_specimen_path)
+    return
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ class VM:
         """
 
         try:
-            print("クローン開始")
+            print(f"{old_domain_name}のクローン開始")
             run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone", "-q"], check=True, text=False)
         except CalledProcessError as e:
             print(f"VMのクローンに失敗しました。{e}", file=sys.stderr)
@@ -116,7 +116,7 @@ class VM:
         """
 
         iface_info = None
-        print("waiting for dhcp")
+        print("IPアドレスを取得中")
         # vmが起動してからipアドレスが割り振られるまでの時間を待機
         while not iface_info:
             iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
