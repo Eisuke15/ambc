@@ -40,7 +40,7 @@ def judge_os(local_specimen_path):
         実行する必要がないと判断するときはNoneを返す
     """
 
-    result = run(["file", local_specimen_path], check=True, text=True, stdout=PIPE)
+    result = run(["file", local_specimen_path], check=False, text=True, stdout=PIPE)
     print(f"ファイル形式:  {result.stdout}")
     tokens = result.stdout.split()
     if 'PE32' in tokens:
