@@ -43,7 +43,9 @@ def judge_os(local_specimen_path):
     result = run(["file", local_specimen_path], check=False, text=True, stdout=PIPE)
     print(f"ファイル形式:  {result.stdout}")
     tokens = result.stdout.split()
-    if 'PE32' in tokens:
+    if 'HTML' in tokens or 'SGML' in tokens:
+        return None, None, None
+    elif 'PE32' in tokens:
         return True, 'win10_32bit', 'malwa'
     elif 'ELF' in tokens or 'ASCII' in tokens or 'Bourne-Aain' in tokens:
         return False, 'ubuntu20.04', 'vmuser'
