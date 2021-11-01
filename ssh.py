@@ -101,7 +101,7 @@ class SSH:
             remote_dir_pathに読み書き実行権限が必要
 
         Todo:
-            取りに行くファイルのパーミッション
+            取りに行くファイルのパーミッション　読み書き
         """
 
         def find_specimen(remote_dir_paths):
@@ -138,7 +138,7 @@ class SSH:
                 sftp_conn.remove(remote_specimen_path)
                 print(f"ハニーポットの{remote_specimen_path}を削除しました。")
             except IOError as e:
-                print(f"ハニーポットに{remote_specimen_path}が存在しないため、削除できません。: {e}")
+                print(f"ハニーポットに{remote_specimen_path}が存在しない、もしくは書き込み権限がないため、削除できません。: {e}")
 
 
 if __name__ == "__main__":
