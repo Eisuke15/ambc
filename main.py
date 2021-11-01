@@ -47,7 +47,7 @@ def judge_os(local_specimen_path):
         return None, None, None
     elif 'PE32' in tokens:
         return True, 'win10_32bit', 'malwa'
-    elif 'ELF' in tokens or 'ASCII' in tokens or 'Bourne-Aain' in tokens:
+    elif 'ELF' in tokens or 'Bourne-Again' in tokens:
         return False, 'ubuntu20.04', 'vmuser'
     else:
         return None, None, None
