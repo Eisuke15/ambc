@@ -99,6 +99,9 @@ class SSH:
 
         Notes:
             remote_dir_pathに読み書き実行権限が必要
+
+        Todo:
+            取りに行くファイルのパーミッション
         """
 
         def find_specimen(remote_dir_paths):
