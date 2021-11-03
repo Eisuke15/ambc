@@ -95,10 +95,11 @@ def behavior_collection():
 
 def interactive_vm(local_specimen_path):
     stop_stp()
-    vm = VM("win10_32bit", CLONE_VM_DOMAIN_NAME)
+    is_windows, domain_name, vm_username = judge_os(local_specimen_path)
+    vm = VM(domain_name, CLONE_VM_DOMAIN_NAME)
     vm.__enter__()
-    with SSH(vm.ip_addr, 'malwa', KEYFILE_PATH) as ssh:
-        remote_specimen_path = decide_remote_specimen_path(True, local_specimen_path, 'malwa')
+    with SSH(vm.ip_addr, vm_username, KEYFILE_PATH) as ssh:
+        remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
         ssh.send_file(local_specimen_path, remote_specimen_path)
     return
 
