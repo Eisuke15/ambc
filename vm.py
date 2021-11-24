@@ -49,6 +49,7 @@ class VM:
 
             else:  # スナップショットによる実行環境の用意
                 self.dom = conn.lookupByName(self.domain_name)
+                self._start_vm()
                 self.snapshot = self.__get_or_create_snapshot(self.snapshot_name)
 
         try:
@@ -135,7 +136,7 @@ class VM:
         try:
             self.dom.create()
         except libvirt.libvirtError as e:
-            die(f"{self.dom.name}を起動できません。", e)
+            die(f"{self.dom.name()}を起動できません。", e)
 
     def _destroy_vm(self):
         """VMを強制終了する。"""
@@ -144,13 +145,13 @@ class VM:
         try:
             result = self.dom.destroy()
         except libvirt.libvirtError as e:
-            die(f"{self.new_domain_name}の強制終了に失敗しました.", e)
+            die(f"{self.dom.name()}の強制終了に失敗しました.", e)
 
         # 強制終了操作はできるが失敗したときは通知のみ
         if result < 0:
-            print(f"{self.new_domain_name}の強制終了に失敗しました。", file=sys.stderr)
+            print(f"{self.dom.name()}の強制終了に失敗しました。", file=sys.stderr)
         else:
-            print(f"{self.new_domain_name}を強制終了")
+            print(f"{self.dom.name()}を強制終了")
 
     def _get_interfaces(self):
         """インターフェースにまつわる情報を返す
@@ -186,17 +187,17 @@ class VM:
         try:
             os.remove(imagefile_path)
         except TypeError:
-            print(f"{self.new_domain_name}のディスクイメージの削除に失敗しました。", file=sys.stderr)
+            print(f"{self.dom.name()}のディスクイメージの削除に失敗しました。", file=sys.stderr)
         else:
-            print(f"{self.new_domain_name}のディスクイメージを削除しました。")
+            print(f"{self.dom.name()}のディスクイメージを削除しました。")
 
     def _undefine(self):
         """VMを削除する"""
 
         if self.dom.undefine() < 0:
-            print(f"{self.new_domain_name}の削除に失敗しました。", file=sys.stderr)
+            print(f"{self.dom.name()}の削除に失敗しました。", file=sys.stderr)
         else:
-            print(f"{self.new_domain_name}を削除しました。")
+            print(f"{self.dom.name()}を削除しました。")
 
 
 if __name__ == "__main__":
