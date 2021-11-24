@@ -12,17 +12,19 @@ from util import die
 class VM:
     """バーチャルマシンを管理するクラス"""
 
-    def __init__(self, domain_name: str, clone: bool = False, new_domain_name: str = None):
+    def __init__(self, domain_name: str, clone: bool = False, new_domain_name: str = None, snapshot_name: str = "default_snapshot_for_revert"):
         """初期化
 
         Arguments:
             domain_name(str): 扱う仮想マシンのドメインネーム
             clone(bool): Trueの場合、実行環境はcloneによって用意する。Falseの場合はスナップショット機能で復元する
             new_domain_name(str): cloneの場合、クローン先の仮想マシンのドメインネーム
+            snapshot_name(str): 作成するスナップショットの名前
         """
         self.domain_name = domain_name
         self.new_domain_name = new_domain_name
         self.clone = clone
+        self.snapshot_name = snapshot_name
 
     def __enter__(self):
         """with文に入るときに実行する。
@@ -47,7 +49,7 @@ class VM:
 
             else:  # スナップショットによる実行環境の用意
                 self.dom = conn.lookupByName(self.domain_name)
-                self.snapshot = self.__create_snapshot()
+                self.snapshot = self.__get_or_create_snapshot(self.snapshot_name)
 
         try:
             self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
@@ -81,18 +83,24 @@ class VM:
 
         return conn
 
-    def __create_snapshot(self):
-        """スナップショットを作成し、作成したスナップショットを返す
+    def __create_snapshot(self, snapshot_name: str):
+        """指定された名前のスナップショットを作成し、作成したスナップショットを返す"""
 
-        Todo: 同名のスナップショット
-        """
-
-        xml_desc = """
+        xml_desc = f"""
         <domainsnapshot>
-            <name>hogegege</name>
+            <name>{snapshot_name}</name>
         </domainsnapshot>
         """
+        print(f'スナップショット"{snapshot_name}"を作成中')
         return self.dom.snapshotCreateXML(xmlDesc=xml_desc, flags=libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC)
+
+    def __get_or_create_snapshot(self, snapshot_name: str):
+        """指定された名前のスナップショットが存在しない場合、新規作成する"""
+
+        if snapshot_name not in self.dom.snapshotListNames():
+            return self.__create_snapshot(snapshot_name)
+        else:
+            return self.dom.snapshotLookupByName(snapshot_name)
 
     def __revert_to_snapshot(self):
         """スナップショットの状態に復元する
