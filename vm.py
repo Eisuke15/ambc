@@ -10,9 +10,17 @@ import libvirt
 class VM:
     """バーチャルマシンを管理するクラス"""
 
-    def __init__(self, old_domain_name, new_domain_name):
-        self.old_domain_name = old_domain_name
+    def __init__(self, domain_name: str, clone: bool = False, new_domain_name: str = None):
+        """初期化
+
+        Arguments:
+            domain_name(str): 扱う仮想マシンのドメインネーム
+            clone(bool): Trueの場合、実行環境はcloneによって用意する。Falseの場合はスナップショット機能で復元する
+            new_domain_name(str): cloneの場合、クローン先の仮想マシンのドメインネーム
+        """
+        self.domain_name = domain_name
         self.new_domain_name = new_domain_name
+        self.clone = clone
 
     def __enter__(self):
         """with文に入るときに実行する。
@@ -20,34 +28,36 @@ class VM:
         この内部でエラー発生しても__exit__ は実行されないので注意。
         """
 
-        try:
-            self._clone_vm(self.old_domain_name, self.new_domain_name)
-        except KeyboardInterrupt:
-            conn = self._connect_qemu_hypervisor()
-            self.dom = conn.lookupByName(self.new_domain_name)
-            conn.close()
-            self._delete_imagefile_path()
-            self._undefine()
-            sys.exit(1)
+        if self.clone:
+            try:
+                self._clone_vm(self.domain_name, self.new_domain_name)
+            except KeyboardInterrupt:
+                conn = self._connect_qemu_hypervisor()
+                self.dom = conn.lookupByName(self.new_domain_name)
+                conn.close()
+                self._delete_imagefile_path()
+                self._undefine()
+                sys.exit(1)
 
-        try:
-            conn = self._connect_qemu_hypervisor()
-            self.dom = conn.lookupByName(self.new_domain_name)
-            conn.close()
-            self._start_vm()
-            self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
-        except KeyboardInterrupt:
-            self.__exit__()
-            sys.exit(1)
+            try:
+                conn = self._connect_qemu_hypervisor()
+                self.dom = conn.lookupByName(self.new_domain_name)
+                conn.close()
+                self._start_vm()
+                self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
+            except KeyboardInterrupt:
+                self.__exit__()
+                sys.exit(1)
 
         return self
 
     def __exit__(self, *args, **kwargs):
         """いかなる原因でも（エラー含めて）with文を抜けるときに確実に実行する"""
 
-        self._destroy_vm()
-        self._delete_imagefile_path()
-        self._undefine()
+        if self.clone:
+            self._destroy_vm()
+            self._delete_imagefile_path()
+            self._undefine()
 
     def _connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
@@ -154,5 +164,6 @@ class VM:
 
 
 if __name__ == "__main__":
-    vm = VM("ubuntu20.04", "clone")
+    vm = VM(domain_name="ubuntu20.04", clone=True, new_domain_name="clonevmbfodafod")
+    vm.__enter__()
     print(vm.ip_addr, vm.interface_name)
