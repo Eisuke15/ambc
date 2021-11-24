@@ -32,28 +32,27 @@ class VM:
         この内部でエラー発生しても__exit__ は実行されないので注意。
         """
 
-        with self._connect_qemu_hypervisor() as conn:
+        with self.__connect_qemu_hypervisor() as conn:
 
             if self.clone:  # クローンによる実行環境の用意
                 try:
-                    self._clone_vm(self.domain_name, self.new_domain_name)
+                    self.__clone_vm(self.domain_name, self.new_domain_name)
                 except KeyboardInterrupt:
                     # Todo: クローン中断の際にイメージファイル削除されていることを確かめる
                     self.dom = conn.lookupByName(self.new_domain_name)
-                    self._delete_imagefile_path()
-                    self._undefine()
+                    self.__delete_imagefile()
+                    self.__undefine()
                     sys.exit(1)
                 else:
                     self.dom = conn.lookupByName(self.new_domain_name)
-                    self._start_vm()
+                    self.__start_vm()
 
             else:  # スナップショットによる実行環境の用意
                 self.dom = conn.lookupByName(self.domain_name)
-                self._start_vm()
                 self.snapshot = self.__get_or_create_snapshot(self.snapshot_name)
 
         try:
-            self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
+            self.ip_addr, _, self.interface_name = self.get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
         except KeyboardInterrupt:
             self.__exit__()
             sys.exit(1)
@@ -64,13 +63,13 @@ class VM:
         """いかなる原因でも（エラー含めて）with文を抜けるときに確実に実行する"""
 
         if self.clone:
-            self._destroy_vm()
-            self._delete_imagefile_path()
-            self._undefine()
+            self.__destroy_vm()
+            self.__delete_imagefile()
+            self.__undefine()
         else:
             self.__revert_to_snapshot()
 
-    def _connect_qemu_hypervisor(self):
+    def __connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
 
         Returns:
@@ -110,7 +109,7 @@ class VM:
         """
         self.dom.revertToSnapshot(self.snapshot, flags=libvirt.VIR_DOMAIN_SNAPSHOT_REVERT_RUNNING)
 
-    def _clone_vm(self, old_domain_name, new_domain_name):
+    def __clone_vm(self, old_domain_name, new_domain_name):
         """新しいVMを用意する。
 
         毎回OSインストールするのは時間がかかるので、インストール済みの既存のVMをクローンする。
@@ -130,7 +129,7 @@ class VM:
         print("クローンが正常に終了しました")
         return
 
-    def _start_vm(self):
+    def __start_vm(self):
         """vmを起動する。"""
 
         try:
@@ -138,7 +137,7 @@ class VM:
         except libvirt.libvirtError as e:
             die(f"{self.dom.name()}を起動できません。", e)
 
-    def _destroy_vm(self):
+    def __destroy_vm(self):
         """VMを強制終了する。"""
 
         # そもそも起動していないなどのエラーをキャッチし終了
@@ -153,7 +152,7 @@ class VM:
         else:
             print(f"{self.dom.name()}を強制終了")
 
-    def _get_interfaces(self):
+    def get_interfaces(self):
         """インターフェースにまつわる情報を返す
 
         Returns:
@@ -179,7 +178,7 @@ class VM:
 
         return ip, mac, interface_name
 
-    def _delete_imagefile_path(self):
+    def __delete_imagefile(self):
         """ディスクイメージファイルを削除する"""
 
         xml = self.dom.XMLDesc()
@@ -191,7 +190,7 @@ class VM:
         else:
             print(f"{self.dom.name()}のディスクイメージを削除しました。")
 
-    def _undefine(self):
+    def __undefine(self):
         """VMを削除する"""
 
         if self.dom.undefine() < 0:
