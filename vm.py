@@ -6,6 +6,8 @@ from time import sleep
 
 import libvirt
 
+from util import die
+
 
 class VM:
     """バーチャルマシンを管理するクラス"""
@@ -28,26 +30,30 @@ class VM:
         この内部でエラー発生しても__exit__ は実行されないので注意。
         """
 
-        if self.clone:
-            try:
-                self._clone_vm(self.domain_name, self.new_domain_name)
-            except KeyboardInterrupt:
-                conn = self._connect_qemu_hypervisor()
-                self.dom = conn.lookupByName(self.new_domain_name)
-                conn.close()
-                self._delete_imagefile_path()
-                self._undefine()
-                sys.exit(1)
+        with self._connect_qemu_hypervisor() as conn:
 
-            try:
-                conn = self._connect_qemu_hypervisor()
-                self.dom = conn.lookupByName(self.new_domain_name)
-                conn.close()
-                self._start_vm()
-                self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
-            except KeyboardInterrupt:
-                self.__exit__()
-                sys.exit(1)
+            if self.clone:  # クローンによる実行環境の用意
+                try:
+                    self._clone_vm(self.domain_name, self.new_domain_name)
+                except KeyboardInterrupt:
+                    # Todo: クローン中断の際にイメージファイル削除されていることを確かめる
+                    self.dom = conn.lookupByName(self.new_domain_name)
+                    self._delete_imagefile_path()
+                    self._undefine()
+                    sys.exit(1)
+                else:
+                    self.dom = conn.lookupByName(self.new_domain_name)
+                    self._start_vm()
+
+            else:  # スナップショットによる実行環境の用意
+                self.dom = conn.lookupByName(self.domain_name)
+                self.snapshot = self.__create_snapshot()
+
+        try:
+            self.ip_addr, _, self.interface_name = self._get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
+        except KeyboardInterrupt:
+            self.__exit__()
+            sys.exit(1)
 
         return self
 
@@ -72,6 +78,22 @@ class VM:
             sys.exit(1)
 
         return conn
+
+    def __create_snapshot(self):
+        """スナップショットを作成し、作成したスナップショットを返す
+
+        Todo: 同名のスナップショット
+        """
+
+        xml_desc = """
+        <domainsnapshot>
+            <name>hogegege</name>
+        </domainsnapshot>
+        """
+        return self.dom.snapshotCreateXML(xmlDesc=xml_desc, flags=libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC)
+
+    def __revert_and_delete_snapshot(self):
+        self.dom.revertToSnapshot(self.snapshot, flags=libvirt.VIR_DOMAIN_SNAPSHOT_REVERT_RUNNING)
 
     def _clone_vm(self, old_domain_name, new_domain_name):
         """新しいVMを用意する。
@@ -164,6 +186,6 @@ class VM:
 
 
 if __name__ == "__main__":
-    vm = VM(domain_name="ubuntu20.04", clone=True, new_domain_name="clonevmbfodafod")
+    vm = VM(domain_name="ubuntu20.04")
     vm.__enter__()
     print(vm.ip_addr, vm.interface_name)
