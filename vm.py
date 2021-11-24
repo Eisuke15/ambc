@@ -132,9 +132,10 @@ class VM:
     def _start_vm(self):
         """vmを起動する。"""
 
-        if self.dom.create() < 0:
-            print(f"{self.dom.name}を起動できません。", file=sys.stderr)
-            sys.exit(1)
+        try:
+            self.dom.create()
+        except libvirt.libvirtError as e:
+            die(f"{self.dom.name}を起動できません。", e)
 
     def _destroy_vm(self):
         """VMを強制終了する。"""
@@ -143,8 +144,7 @@ class VM:
         try:
             result = self.dom.destroy()
         except libvirt.libvirtError as e:
-            print(f"{self.new_domain_name}の強制終了に失敗しました。{e}", file=sys.stderr)
-            sys.exit(1)
+            die(f"{self.new_domain_name}の強制終了に失敗しました.", e)
 
         # 強制終了操作はできるが失敗したときは通知のみ
         if result < 0:
@@ -203,4 +203,3 @@ if __name__ == "__main__":
     with VM(domain_name="ubuntu20.04") as vm:
         print(vm.snapshot.getName())
         print(vm.ip_addr, vm.interface_name)
-
