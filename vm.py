@@ -51,12 +51,6 @@ class VM:
                 self.dom = conn.lookupByName(self.domain_name)
                 self.snapshot = self.__get_or_create_snapshot(self.snapshot_name)
 
-        try:
-            self.ip_addr, _, self.interface_name = self.get_interfaces()  # macアドレスは現時点では必要ないので読み捨て
-        except KeyboardInterrupt:
-            self.__exit__()
-            sys.exit(1)
-
         return self
 
     def __exit__(self, *args, **kwargs):
