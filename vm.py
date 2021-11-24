@@ -64,6 +64,8 @@ class VM:
             self._destroy_vm()
             self._delete_imagefile_path()
             self._undefine()
+        else:
+            self.__revert_to_snapshot()
 
     def _connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
@@ -92,7 +94,11 @@ class VM:
         """
         return self.dom.snapshotCreateXML(xmlDesc=xml_desc, flags=libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC)
 
-    def __revert_and_delete_snapshot(self):
+    def __revert_to_snapshot(self):
+        """スナップショットの状態に復元する
+
+        復元後のVMの状態は実行中であるよう指定している。
+        """
         self.dom.revertToSnapshot(self.snapshot, flags=libvirt.VIR_DOMAIN_SNAPSHOT_REVERT_RUNNING)
 
     def _clone_vm(self, old_domain_name, new_domain_name):
@@ -186,6 +192,7 @@ class VM:
 
 
 if __name__ == "__main__":
-    vm = VM(domain_name="ubuntu20.04")
-    vm.__enter__()
-    print(vm.ip_addr, vm.interface_name)
+    with VM(domain_name="ubuntu20.04") as vm:
+        print(vm.snapshot.getName())
+        print(vm.ip_addr, vm.interface_name)
+
