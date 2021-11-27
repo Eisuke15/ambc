@@ -3,10 +3,10 @@ import sys
 from datetime import datetime
 from subprocess import PIPE, run
 
-from settings import (CLONE_VM_DOMAIN_NAME, EXECUTION_TIME_LIMIT,
-                      HONEYPOT_IP_ADDR, HONEYPOT_SPECIMEN_DIRS,
-                      HONEYPOT_SSH_PORT, HONEYPOT_USER_NAME, KEYFILE_PATH,
-                      PCAP_BASE_DIR, PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR)
+from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
+                      HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
+                      HONEYPOT_USER_NAME, KEYFILE_PATH, PCAP_BASE_DIR,
+                      PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR)
 from ssh import SSH
 from tcpdump import Tcpdump
 from vm import VM
@@ -43,13 +43,15 @@ def judge_os(local_specimen_path):
     result = run(["file", local_specimen_path], check=False, text=True, stdout=PIPE)
     print(f"ファイル形式:  {result.stdout}")
     tokens = result.stdout.split()
-    if 'HTML' in tokens or 'SGML' in tokens:
+    if 'HTML' in tokens or 'SGML' in tokens or '(DLL)' in tokens:
+        print('ファイルを破棄')
         return None, None, None
     elif 'PE32' in tokens:
         return True, 'win10_32bit', 'malwa'
-    elif 'ELF' in tokens or 'Bourne-Again' in tokens:
+    elif 'ELF' in tokens or 'Bourne-Again' in tokens or 'ASCII' in tokens or 'Perl' in tokens:
         return False, 'ubuntu20.04', 'vmuser'
     else:
+        print('ファイルを破棄')
         return None, None, None
 
 
@@ -78,10 +80,11 @@ def behavior_collection():
         is_windows, domain_name, vm_username = judge_os(local_specimen_path)
         if domain_name is not None:
             # Tcpdumpを開始しVM内で実行
-            with VM(domain_name, CLONE_VM_DOMAIN_NAME) as vm:
+            with VM(domain_name) as vm:
                 pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
-                with Tcpdump(pcap_path, vm.interface_name, PRE_EXECUTION_TIME):
-                    with SSH(vm.ip_addr, vm_username, KEYFILE_PATH) as ssh:
+                ip_addr, _, interface_name = vm.get_interfaces()
+                with Tcpdump(pcap_path, interface_name, PRE_EXECUTION_TIME):
+                    with SSH(ip_addr, vm_username, KEYFILE_PATH) as ssh:
                         remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
                         ssh.send_file(local_specimen_path, remote_specimen_path)
                         ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
