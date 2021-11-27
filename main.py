@@ -75,10 +75,15 @@ def behavior_collection():
 
     logging.info("start behaviour collection")
 
+    # はじめにVMをすべて起動
+    VM.start_if_shutoff("win10_32bit")
+    VM.start_if_shutoff("ubuntu20.04")
+
     while True:
         # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
+            ssh.remove_specimen(honeypot_specimen_path)
 
         is_windows, domain_name, vm_username = judge_os(local_specimen_path)
         if domain_name is not None:
@@ -91,10 +96,6 @@ def behavior_collection():
                         remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
                         ssh.send_file(local_specimen_path, remote_specimen_path)
                         ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
-
-        # 最後に検体をハニーポットから削除
-        with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
-            ssh.remove_specimen(honeypot_specimen_path)
 
 
 def interactive_vm(local_specimen_path):

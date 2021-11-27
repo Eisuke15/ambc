@@ -64,6 +64,24 @@ class VM:
         else:
             self.__revert_to_snapshot()
 
+    @classmethod
+    def start_if_shutoff(cls, domain_name):
+        """特定のドメイン名のVMが起動していない場合起動する。
+
+        stateの詳細は下記
+        https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainState
+        """
+
+        with libvirt.open("qemu:///system") as conn:
+            domain = conn.lookupByName(domain_name)
+            state = domain.info()[0]
+            if state == 1:
+                pass
+            elif state == 5:
+                domain.create()
+            else:
+                die("VMが起動中もしくは終了中である必要があります。")
+
     def __connect_qemu_hypervisor(self):
         """qemuハイパーバイザに接続する。
 
