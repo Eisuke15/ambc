@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -72,8 +73,7 @@ class VM:
         try:
             conn = libvirt.open("qemu:///system")
         except libvirt.libvirtError as e:
-            print(f"ハイパーバイザに接続できませんでした。{e}", file=sys.stderr)
-            sys.exit(1)
+            die("ハイパーバイザに接続できませんでした", e)
 
         return conn
 
@@ -85,7 +85,7 @@ class VM:
             <name>{snapshot_name}</name>
         </domainsnapshot>
         """
-        print(f'スナップショット"{snapshot_name}"を作成中')
+        logging.info(f'スナップショット"{snapshot_name}"を作成中')
         return self.dom.snapshotCreateXML(xmlDesc=xml_desc, flags=libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC)
 
     def __get_or_create_snapshot(self, snapshot_name: str):
@@ -114,13 +114,12 @@ class VM:
         """
 
         try:
-            print(f"{old_domain_name}のクローン開始")
+            logging.info(f"{old_domain_name}のクローン開始")
             run(["virt-clone", "-o", old_domain_name, "-n", new_domain_name, "--auto-clone", "-q"], check=True, text=False)
         except CalledProcessError as e:
-            print(f"VMのクローンに失敗しました。{e}", file=sys.stderr)
-            sys.exit(1)
+            die("VMのクローンに失敗しました。", e)
 
-        print("クローンが正常に終了しました")
+        logging.info("クローンが正常に終了しました")
         return
 
     def __start_vm(self):
@@ -142,9 +141,9 @@ class VM:
 
         # 強制終了操作はできるが失敗したときは通知のみ
         if result < 0:
-            print(f"{self.dom.name()}の強制終了に失敗しました。", file=sys.stderr)
+            logging.warning(f"{self.dom.name()}の強制終了に失敗しました。", file=sys.stderr)
         else:
-            print(f"{self.dom.name()}を強制終了")
+            logging.info(f"{self.dom.name()}を強制終了")
 
     def get_interfaces(self):
         """インターフェースにまつわる情報を返す
@@ -156,7 +155,7 @@ class VM:
         """
 
         iface_info = None
-        print("IPアドレスを取得中")
+        logging.info("IPアドレスを取得中")
         # vmが起動してからipアドレスが割り振られるまでの時間を待機
         while not iface_info:
             iface_info = self.dom.interfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE, 0)
@@ -180,20 +179,14 @@ class VM:
         try:
             os.remove(imagefile_path)
         except TypeError:
-            print(f"{self.dom.name()}のディスクイメージの削除に失敗しました。", file=sys.stderr)
+            logging.warning(f"{self.dom.name()}のディスクイメージの削除に失敗しました。", file=sys.stderr)
         else:
-            print(f"{self.dom.name()}のディスクイメージを削除しました。")
+            logging.info(f"{self.dom.name()}のディスクイメージを削除しました。")
 
     def __undefine(self):
         """VMを削除する"""
 
         if self.dom.undefine() < 0:
-            print(f"{self.dom.name()}の削除に失敗しました。", file=sys.stderr)
+            logging.info(f"{self.dom.name()}の削除に失敗しました。", file=sys.stderr)
         else:
-            print(f"{self.dom.name()}を削除しました。")
-
-
-if __name__ == "__main__":
-    with VM(domain_name="ubuntu20.04") as vm:
-        print(vm.snapshot.getName())
-        print(vm.ip_addr, vm.interface_name)
+            logging.info(f"{self.dom.name()}を削除しました。")

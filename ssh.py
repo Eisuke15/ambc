@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 import threading
@@ -67,24 +68,22 @@ class SSH:
 
         try:
             command = f"{remote_specimen_path} 2>&1"
-            print(f"Command: {command}")
+            logging.info(f"Command: {command}")
             _, stdout, _ = self.client.exec_command(command, timeout=ovservation_time)
 
-            print("\n****************出力*****************")
             try:
-                for line in stdout:
-                    print(line, end="")
+                logging.info(f"出力:\n{stdout.read().decode()}")
             except UnicodeDecodeError as e:
-                print(f"出力がデコードできませんでした。: {e}")
+                logging.warning(f"出力がデコードできませんでした。: {e}")
 
         except socket.timeout:
-            print("\n実行時間制限\n")
+            logging.info("実行時間制限")
         else:
             returncode = stdout.channel.recv_exit_status()
-            print(f"\n実行終了 return code = {returncode}\n")
+            logging.info(f"実行終了 return code = {returncode}")
         finally:
             thread.join()
-            print("パケット観測終了")
+            logging.info("パケット観測終了")
 
     def wait_until_receive(self, local_dir_path: str, remote_dir_paths):
         """指定されたパスを監視する．ファイルを発見したら受信して，そのパスを返す．
@@ -119,13 +118,13 @@ class SSH:
             except IOError as e:
                 die("指定した監視するディレクトリが存在しません。", e)
             if not remote_specimen_path:
-                print("検体を待機中")
+                logging.info("検体を待機中")
             while not remote_specimen_path:
                 sleep(10)
                 remote_specimen_path = find_specimen(remote_dir_paths)
             else:
                 specimen_filename = os.path.basename(remote_specimen_path)
-                print(f"{remote_specimen_path} を転送中")
+                logging.info(f"{remote_specimen_path} を転送中")
                 local_specimen_path = os.path.join(local_dir_path, specimen_filename)
                 sftpconn.get(remote_specimen_path, local_specimen_path)
                 return local_specimen_path, remote_specimen_path
@@ -136,9 +135,9 @@ class SSH:
         with self.client.open_sftp() as sftp_conn:
             try:
                 sftp_conn.remove(remote_specimen_path)
-                print(f"ハニーポットの{remote_specimen_path}を削除しました。")
+                logging.info(f"ハニーポットの{remote_specimen_path}を削除しました。")
             except IOError as e:
-                print(f"ハニーポットに{remote_specimen_path}が存在しない、もしくは書き込み権限がないため、削除できません。: {e}")
+                logging.warning(f"ハニーポットに{remote_specimen_path}が存在しない、もしくは書き込み権限がないため、削除できません。: {e}")
 
 
 if __name__ == "__main__":

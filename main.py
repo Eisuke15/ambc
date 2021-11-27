@@ -42,17 +42,19 @@ def judge_os(local_specimen_path):
     """
 
     result = run(["file", local_specimen_path], check=False, text=True, stdout=PIPE)
-    print(f"ファイル形式:  {result.stdout}")
+    logging.info(f"ファイル形式:  {result.stdout}")
     tokens = result.stdout.split()
     if 'HTML' in tokens or 'SGML' in tokens or '(DLL)' in tokens:
-        print('ファイルを破棄')
+        logging.info('ファイルを破棄')
         return None, None, None
     elif 'PE32' in tokens:
+        logging.info("windowsで実行")
         return True, 'win10_32bit', 'malwa'
     elif 'ELF' in tokens or 'Bourne-Again' in tokens or 'ASCII' in tokens or 'Perl' in tokens:
+        logging.info("Linuxで実行")
         return False, 'ubuntu20.04', 'vmuser'
     else:
-        print('ファイルを破棄')
+        logging.info('ファイルを破棄')
         return None, None, None
 
 
@@ -71,11 +73,6 @@ def behavior_collection():
 
     pcap_dir = mk_pcap_dir()
 
-    logging.basicConfig(
-        filename=os.path.join(LOGGING_DIR, datetime.now().strftime("%Y-%m-%d-%H-%M.log")),
-        format="%(levelname)s - %(asctime)s - %(message)s",
-        level=logging.INFO
-    )
     logging.info("start behaviour collection")
 
     while True:
@@ -99,8 +96,6 @@ def behavior_collection():
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             ssh.remove_specimen(honeypot_specimen_path)
 
-        print("\n\n\n")
-
 
 def interactive_vm(local_specimen_path):
     stop_stp()
@@ -115,6 +110,12 @@ def interactive_vm(local_specimen_path):
 
 
 if __name__ == "__main__":
+
+    logging.basicConfig(
+        filename=os.path.join(LOGGING_DIR, datetime.now().strftime("%Y-%m-%d-%H-%M.log")),
+        format="%(levelname)s - %(asctime)s - %(message)s",
+        level=logging.INFO
+    )
 
     if len(sys.argv) == 2:
         interactive_vm(sys.argv[1])
