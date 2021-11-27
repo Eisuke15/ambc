@@ -149,5 +149,5 @@ binaries
 #pcapを入れておくディレクトリ
 pcap
 
-# ログファイル
-log.txt
+# ログディレクトリ
+log
