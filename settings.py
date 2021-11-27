@@ -15,3 +15,4 @@ HONEYPOT_SPECIMEN_DIRS = [
     os.environ.get("HONEYPOT_SPECIMEN_DIR_2"),
 ]
 TMP_SPECIMEN_DIR = os.environ.get("TMP_SPECIMEN_DIR")
+LOGGING_DIR = os.environ.get("LOGGING_DIR")

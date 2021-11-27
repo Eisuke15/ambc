@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from datetime import datetime
@@ -5,8 +6,8 @@ from subprocess import PIPE, run
 
 from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
                       HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
-                      HONEYPOT_USER_NAME, KEYFILE_PATH, PCAP_BASE_DIR,
-                      PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR)
+                      HONEYPOT_USER_NAME, KEYFILE_PATH, LOGGING_DIR,
+                      PCAP_BASE_DIR, PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR)
 from ssh import SSH
 from tcpdump import Tcpdump
 from vm import VM
@@ -70,9 +71,14 @@ def behavior_collection():
 
     pcap_dir = mk_pcap_dir()
 
-    while True:
-        print(datetime.now())
+    logging.basicConfig(
+        filename=os.path.join(LOGGING_DIR, datetime.now().strftime("%Y-%m-%d-%H-%M.log")),
+        format="%(levelname)s - %(asctime)s - %(message)s",
+        level=logging.INFO
+    )
+    logging.info("start behaviour collection")
 
+    while True:
         # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
