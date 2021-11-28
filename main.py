@@ -3,6 +3,7 @@ import os
 import sys
 from datetime import datetime
 from subprocess import PIPE, run
+import hashlib
 
 from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
                       HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
@@ -19,6 +20,13 @@ def stop_stp(bridge_name="virbr0"):
     run(["brctl", "stp", bridge_name, "off"], check=True)
 
 
+def calcurate_hash(local_specimen_path):
+    """ファイルのハッシュ値を計算する"""
+
+    with open(local_specimen_path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
 def mk_pcap_dir():
     """pcapを格納するディレクトリを作成
 
@@ -30,8 +38,11 @@ def mk_pcap_dir():
     return pcap_dir
 
 
-def judge_os(local_specimen_path):
+def judge_os(local_specimen_path, filehash_set):
     """ファイル形式から、実行環境のOSを判定
+
+    攻撃者が何度も同じ検体を送信する可能性を考慮し、
+    一度実行したファイルは重複しないよう破棄する。
 
     Returns:
         Windowsか否か
@@ -40,6 +51,14 @@ def judge_os(local_specimen_path):
 
         実行する必要がないと判断するときはNoneを返す
     """
+
+    filename = os.path.basename(local_specimen_path)
+    filehash = calcurate_hash(local_specimen_path)
+    if filehash in filehash_set:
+        logging.info(f"{filename}は実行済みのためスルー")
+        return None, None, None
+    else:
+        filehash_set.add(filehash)
 
     result = run(["file", local_specimen_path], check=False, text=True, stdout=PIPE)
     logging.info(f"ファイル形式:  {result.stdout}")
@@ -79,13 +98,15 @@ def behavior_collection():
     VM.start_if_shutoff("win10_32bit")
     VM.start_if_shutoff("ubuntu20.04")
 
+    filehash_set = set()
+
     while True:
         # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
         with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
             local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
             ssh.remove_specimen(honeypot_specimen_path)
 
-        is_windows, domain_name, vm_username = judge_os(local_specimen_path)
+        is_windows, domain_name, vm_username = judge_os(local_specimen_path, filehash_set)
         if domain_name is not None:
             # Tcpdumpを開始しVM内で実行
             with VM(domain_name) as vm:
