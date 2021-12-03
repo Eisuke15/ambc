@@ -110,8 +110,10 @@ class VM:
         """指定された名前のスナップショットが存在しない場合、新規作成する"""
 
         if snapshot_name not in self.dom.snapshotListNames():
+            logging.info(f"スナップショット'{snapshot_name}'を作成")
             return self.__create_snapshot(snapshot_name)
         else:
+            logging.info(f"既存のスナップショット'{snapshot_name}'を利用")
             return self.dom.snapshotLookupByName(snapshot_name)
 
     def __revert_to_snapshot(self):
@@ -120,6 +122,7 @@ class VM:
         復元後のVMの状態は実行中であるよう指定している。
         """
         self.dom.revertToSnapshot(self.snapshot, flags=libvirt.VIR_DOMAIN_SNAPSHOT_REVERT_RUNNING)
+        logging.info(f"スナップショット'{self.snapshot_name}'の状態に復元")
 
     def __clone_vm(self, old_domain_name, new_domain_name):
         """新しいVMを用意する。
