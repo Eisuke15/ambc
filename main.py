@@ -101,22 +101,25 @@ def behavior_collection():
     filehash_set = set()
 
     while True:
-        # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
-        with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
-            local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
-            ssh.remove_specimen(honeypot_specimen_path)
+        try:
+            # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
+            with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
+                local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
+                ssh.remove_specimen(honeypot_specimen_path)
 
-        is_windows, domain_name, vm_username = judge_os(local_specimen_path, filehash_set)
-        if domain_name is not None:
-            # Tcpdumpを開始しVM内で実行
-            with VM(domain_name) as vm:
-                pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
-                ip_addr, _, interface_name = vm.get_interfaces()
-                with Tcpdump(pcap_path, interface_name, PRE_EXECUTION_TIME):
-                    with SSH(ip_addr, vm_username, KEYFILE_PATH) as ssh:
-                        remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
-                        ssh.send_file(local_specimen_path, remote_specimen_path)
-                        ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
+            is_windows, domain_name, vm_username = judge_os(local_specimen_path, filehash_set)
+            if domain_name is not None:
+                # Tcpdumpを開始しVM内で実行
+                with VM(domain_name) as vm:
+                    pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
+                    ip_addr, _, interface_name = vm.get_interfaces()
+                    with Tcpdump(pcap_path, interface_name, PRE_EXECUTION_TIME):
+                        with SSH(ip_addr, vm_username, KEYFILE_PATH) as ssh:
+                            remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
+                            ssh.send_file(local_specimen_path, remote_specimen_path)
+                            ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
+        except EOFError as e:
+            logging.error(f"{e}が発生。挙動収集は続行。")
 
 
 def interactive_vm(local_specimen_path):
