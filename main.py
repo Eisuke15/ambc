@@ -69,7 +69,7 @@ def judge_os(local_specimen_path, filehash_set):
     elif 'PE32' in tokens:
         logging.info("windowsで実行")
         return True, 'win10_32bit', 'malwa'
-    elif 'ELF' in tokens or 'Bourne-Again' in tokens or 'ASCII' in tokens or 'Perl' in tokens:
+    elif 'ELF' in tokens or 'Bourne-Again' in tokens or 'ASCII' in tokens or 'Perl' in tokens or 'POSIX' in tokens:
         logging.info("Linuxで実行")
         return False, 'ubuntu20.04', 'vmuser'
     else:
