@@ -1,9 +1,11 @@
+import hashlib
 import logging
 import os
 import sys
 from datetime import datetime
 from subprocess import PIPE, run
-import hashlib
+
+from paramiko.ssh_exception import SSHException
 
 from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
                       HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
@@ -119,7 +121,11 @@ def behavior_collection():
                             ssh.send_file(local_specimen_path, remote_specimen_path)
                             ssh.execute_file(remote_specimen_path, EXECUTION_TIME_LIMIT)
         except EOFError as e:
-            logging.error(f"{e}が発生。挙動収集は続行。")
+            logging.error(f"pattern1: {e}が発生。挙動収集は続行。")
+        except SSHException as e:
+            logging.error(f"pattern2: {e}が発生。挙動収集は続行。")
+        except Exception as e:
+            logging.error(f"pattern3: {e}が発生。挙動収集は続行。")
 
 
 def interactive_vm(local_specimen_path):
