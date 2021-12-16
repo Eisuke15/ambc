@@ -10,7 +10,7 @@ from paramiko.ssh_exception import SSHException
 from settings import (EXECUTION_TIME_LIMIT, HONEYPOT_IP_ADDR,
                       HONEYPOT_SPECIMEN_DIRS, HONEYPOT_SSH_PORT,
                       HONEYPOT_USER_NAME, KEYFILE_PATH, LOGGING_DIR,
-                      PCAP_BASE_DIR, PRE_EXECUTION_TIME, TMP_SPECIMEN_DIR)
+                      PCAP_BASE_DIR, PRE_EXECUTION_TIME, SPECIMEN_BASE_DIR)
 from ssh import SSH
 from tcpdump import Tcpdump
 from vm import VM
@@ -29,15 +29,12 @@ def calcurate_hash(local_specimen_path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def mk_pcap_dir():
-    """pcapを格納するディレクトリを作成
-
-    実行日時を名前とする
-    """
-    pcap_dir_name = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    pcap_dir = os.path.join(PCAP_BASE_DIR, pcap_dir_name)
-    os.mkdir(pcap_dir)
-    return pcap_dir
+def mk_datetime_dir(base_dir):
+    """実行日時を名前とするディレクトリを作成"""
+    dir_name = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    created_dir = os.path.join(base_dir, dir_name)
+    os.mkdir(created_dir)
+    return created_dir
 
 
 def judge_os(local_specimen_path, filehash_set):
@@ -92,7 +89,8 @@ def behavior_collection():
 
     stop_stp()
 
-    pcap_dir = mk_pcap_dir()
+    pcap_dir = mk_datetime_dir(PCAP_BASE_DIR)
+    specimen_dir = mk_datetime_dir(SPECIMEN_BASE_DIR)
 
     logging.info("start behaviour collection")
 
@@ -106,7 +104,7 @@ def behavior_collection():
         try:
             # まず検体をハニーポットから転送　Todo: 書き込み中のファイルを転送してしまう問題をどうするか
             with SSH(HONEYPOT_IP_ADDR, HONEYPOT_USER_NAME, KEYFILE_PATH, HONEYPOT_SSH_PORT) as ssh:
-                local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(TMP_SPECIMEN_DIR, HONEYPOT_SPECIMEN_DIRS)
+                local_specimen_path, honeypot_specimen_path = ssh.wait_until_receive(specimen_dir, HONEYPOT_SPECIMEN_DIRS)
                 ssh.remove_specimen(honeypot_specimen_path)
 
             is_windows, domain_name, vm_username = judge_os(local_specimen_path, filehash_set)
