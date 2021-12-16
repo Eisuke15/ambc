@@ -147,7 +147,10 @@ binaries
 .DS_Store
 
 #pcapを入れておくディレクトリ
-pcap
+pcap/
 
 # ログディレクトリ
-log
+log/
+
+# 検体を入れておくディレクトリ
+specimen/
