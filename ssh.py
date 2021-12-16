@@ -70,11 +70,17 @@ class SSH:
             command = f"{remote_specimen_path} 2>&1"
             logging.info(f"Command: {command}")
             _, stdout, _ = self.client.exec_command(command, timeout=ovservation_time)
+            data = stdout.read()
 
             try:
-                logging.info(f"出力:\n{stdout.read().decode()}")
+                logging.info(f"出力（utf-8）:\n{data.decode()}")
             except UnicodeDecodeError as e:
-                logging.warning(f"出力がデコードできませんでした。: {e}")
+                logging.warning(f"出力がutf-8でデコードできませんでした。: {e}")
+
+            try:
+                logging.info(f"出力（shift-jis）:\n{data.decode('shift-jis')}")
+            except UnicodeDecodeError as e:
+                logging.warning(f"出力がshift-jisでデコードできませんでした。: {e}")
 
         except socket.timeout:
             logging.info("実行時間制限")
