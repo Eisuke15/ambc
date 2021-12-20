@@ -51,6 +51,8 @@ class VM:
             else:  # スナップショットによる実行環境の用意
                 self.dom = conn.lookupByName(self.domain_name)
                 self.snapshot = self.__get_or_create_snapshot(self.snapshot_name)
+                # Windows Defenderは時間の経過により自動で起動してしまうため、ここで強制的に無効状態にリセットする
+                self.__revert_to_snapshot()
 
         return self
 
