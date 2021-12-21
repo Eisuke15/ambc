@@ -13,7 +13,7 @@ from util import die
 class VM:
     """バーチャルマシンを管理するクラス"""
 
-    def __init__(self, domain_name: str, clone: bool = False, new_domain_name: str = None, snapshot_name: str = "default_snapshot_for_revert"):
+    def __init__(self, domain_name: str, clone: bool = False, new_domain_name: str = None, snapshot_name: str = "default"):
         """初期化
 
         Arguments:
