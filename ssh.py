@@ -129,10 +129,12 @@ class SSH:
                 sleep(10)
                 remote_specimen_path = find_specimen(remote_dir_paths)
             else:
+                logging.info(f"{remote_specimen_path} がハニーポットに到着")
                 specimen_filename = os.path.basename(remote_specimen_path)
-                logging.info(f"{remote_specimen_path} を転送中")
                 local_specimen_path = os.path.join(local_dir_path, specimen_filename)
+                logging.info(f"{specimen_filename}を{local_specimen_path}に転送")
                 sftpconn.get(remote_specimen_path, local_specimen_path)
+                logging.info("転送完了")
                 return local_specimen_path, remote_specimen_path
 
     def remove_specimen(self, remote_specimen_path):
@@ -140,6 +142,7 @@ class SSH:
 
         with self.client.open_sftp() as sftp_conn:
             try:
+                logging.info(f"ハニーポットの{remote_specimen_path}を削除します。")
                 sftp_conn.remove(remote_specimen_path)
                 logging.info(f"ハニーポットの{remote_specimen_path}を削除しました。")
             except IOError as e:

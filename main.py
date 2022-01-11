@@ -122,7 +122,13 @@ def behavior_collection():
                 # Tcpdumpを開始しVM内で実行
                 with VM(domain_name) as vm:
                     pcap_path = os.path.join(pcap_dir, os.path.basename(local_specimen_path) + ".pcap")
-                    ip_addr, _, interface_name = vm.get_interfaces()
+                    # ip_addr, _, interface_name = vm.get_interfaces()
+                    if is_windows:
+                        ip_addr = '192.168.122.120'
+                        interface_name = 'vnet1'
+                    else:
+                        ip_addr = '192.168.122.115'
+                        interface_name = 'vnet0'
                     with Tcpdump(pcap_path, interface_name, PRE_EXECUTION_TIME):
                         with SSH(ip_addr, vm_username, KEYFILE_PATH) as ssh:
                             remote_specimen_path = decide_remote_specimen_path(is_windows, local_specimen_path, vm_username)
