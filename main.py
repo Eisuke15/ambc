@@ -22,6 +22,10 @@ def stop_stp(bridge_name="virbr0"):
     run(["brctl", "stp", bridge_name, "off"], check=True)
 
 
+def add_qdisc_rule():
+    run(['tc', 'qdisc', 'add', 'dev', 'wlp5s0', 'root', 'tbf', 'rate', '50kbps', 'limit', '100kb', 'burst', '10kb'])
+
+
 def calcurate_hash(local_specimen_path):
     """ファイルのハッシュ値を計算する"""
 
@@ -98,6 +102,7 @@ def behavior_collection():
     """挙動収集の一連の動作の反復"""
 
     stop_stp()
+    add_qdisc_rule()
 
     pcap_dir = mk_datetime_dir(PCAP_BASE_DIR)
     specimen_dir = mk_datetime_dir(SPECIMEN_BASE_DIR)
